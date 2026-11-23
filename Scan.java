@@ -9,7 +9,8 @@ import javax.swing.border.TitledBorder;
 public class Scan extends JFrame {
     private final JFrame mainMenu;
 
-    private JTextField reqQueueField, headPosField, diskSizeField;
+    private JTextArea reqQueueField;
+    private JTextField headPosField, diskSizeField;
     private JComboBox<String> directionBox;
     private JTextArea sequenceArea, movementDetailsArea;
     private JLabel totalMovementLabel, avgSeekLabel;
@@ -64,16 +65,34 @@ public class Scan extends JFrame {
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.insets = new Insets(10, 10, 10, 10);
 
-        // Row 1
+        // Row 1: Request queue with automatic line wrapping
         gbc.gridx = 0; gbc.gridy = 0;
+        gbc.anchor = GridBagConstraints.NORTHWEST;
         inputPanel.add(new JLabel("Request Queue (comma/space separated):"), gbc);
-        reqQueueField = new JTextField(35);
-        gbc.gridx = 1; gbc.gridwidth = 3;
-        inputPanel.add(reqQueueField, gbc);
+
+        reqQueueField = new JTextArea(3, 35);
+        reqQueueField.setLineWrap(true);
+        reqQueueField.setWrapStyleWord(true);
+        reqQueueField.setFont(MAIN_FONT);
+        JScrollPane requestQueueScroll = new JScrollPane(reqQueueField);
+        requestQueueScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        requestQueueScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        requestQueueScroll.setPreferredSize(new Dimension(420, 65));
+        gbc.gridx = 1; gbc.gridwidth = 3; gbc.fill = GridBagConstraints.BOTH;
+        inputPanel.add(requestQueueScroll, gbc);
+
+        JLabel queueLimitNote = new JLabel("Minimum: 1. Maximum: 100");
+        queueLimitNote.setFont(new Font("Segoe UI", Font.ITALIC, 12));
+        queueLimitNote.setForeground(new Color(90, 100, 100));
+        gbc.gridx = 1; gbc.gridy = 1; gbc.gridwidth = 3;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = new Insets(0, 10, 5, 10);
+        inputPanel.add(queueLimitNote, gbc);
+        gbc.insets = new Insets(10, 10, 10, 10);
 
         // Row 2
         gbc.gridwidth = 1;
-        gbc.gridx = 0; gbc.gridy = 1;
+        gbc.gridx = 0; gbc.gridy = 2;
         inputPanel.add(new JLabel("Initial Head Position:"), gbc);
         headPosField = new JTextField(10);
         gbc.gridx = 1;
@@ -87,7 +106,7 @@ public class Scan extends JFrame {
         inputPanel.add(diskSizeField, gbc);
 
         // Row 3
-        gbc.gridx = 0; gbc.gridy = 2;
+        gbc.gridx = 0; gbc.gridy = 3;
         inputPanel.add(new JLabel("Initial Direction:"), gbc);
         directionBox = new JComboBox<>(new String[]{"Up (Towards Max)", "Down (Towards 0)"});
         gbc.gridx = 1;
@@ -112,7 +131,7 @@ public class Scan extends JFrame {
         buttonPanel.add(sampleBtn);
         buttonPanel.add(clearBtn);
 
-        gbc.gridx = 0; gbc.gridy = 3; gbc.gridwidth = 4;
+        gbc.gridx = 0; gbc.gridy = 4; gbc.gridwidth = 4;
         inputPanel.add(buttonPanel, gbc);
 
 
@@ -224,25 +243,53 @@ public class Scan extends JFrame {
             int headPos = Integer.parseInt(headPosField.getText().trim());
             boolean dirUp = directionBox.getSelectedIndex() == 0;
 
-            String[] reqStrings = reqQueueField.getText().split("[,\\s]+");
+            if (diskSize <= 0) {
+                JOptionPane.showMessageDialog(this, "Disk size must be greater than 0.",
+                    "Input Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            if (headPos < 0 || headPos >= diskSize) {
+                JOptionPane.showMessageDialog(this,
+                    "Initial head position must be between 0 and " + (diskSize - 1) + ".",
+                    "Input Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            String queueText = reqQueueField.getText().trim();
+            if (queueText.isEmpty()) {
+                JOptionPane.showMessageDialog(this,
+                    "Please enter at least 1 disk request.",
+                    "Input Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            String[] reqStrings = queueText.split("[,\\s]+");
             List<Integer> requests = new ArrayList<>();
-            for (String s : reqStrings) {
-                if (!s.isEmpty()) {
-                    int val = Integer.parseInt(s);
-                    if (val >= 0 && val < diskSize) requests.add(val);
+            for (String value : reqStrings) {
+                if (!value.isEmpty()) {
+                    int cylinder = Integer.parseInt(value);
+                    if (cylinder < 0 || cylinder >= diskSize) {
+                        JOptionPane.showMessageDialog(this,
+                            "Request value " + cylinder + " is outside the valid disk range (0 to " + (diskSize - 1) + ").",
+                            "Input Error", JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+                    requests.add(cylinder);
                 }
             }
 
-            if (requests.size() < 20) {
+            if (requests.size() > 100) {
                 JOptionPane.showMessageDialog(this,
-                    "You entered fewer than 20 requests. The algorithm will still run.",
-                    "Requirement Notice", JOptionPane.INFORMATION_MESSAGE);
+                    "The request queue exceeded the maximum of 100 requests. You entered " + requests.size() + ".",
+                    "Input Error", JOptionPane.ERROR_MESSAGE);
+                return;
             }
 
             calculateScan(requests, headPos, diskSize, dirUp);
 
         } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "Please enter valid numeric integers.", "Input Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Please enter valid numeric integers.",
+                "Input Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -300,7 +347,7 @@ public class Scan extends JFrame {
         int totalMovement = 0;
         for (int i = 0; i < sequence.size(); i++) {
             seqStr.append(sequence.get(i));
-            if (i < sequence.size() - 1) seqStr.append("  ➔  ");
+            if (i < sequence.size() - 1) seqStr.append("  →  ");
            
             if (i > 0) {
                 int start = sequence.get(i - 1);
