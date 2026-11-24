@@ -7,22 +7,28 @@ import java.awt.geom.*;
 import java.util.*;
 import java.util.List;
 
+// Main window of C-LOOK 
 public class CLook extends JFrame {
     private final JFrame mainMenu;
+    
+    // Input limits
     private static final int MAX_DISK_SIZE = 200;
     private static final int MAX_REQUESTS = 100;
 
+    // User inputs
     private final JTextField diskSizeField = new JTextField();
     private final JTextField headField = new JTextField();
     private final JTextArea requestsField = new JTextArea(3, 20);
     private final JComboBox<String> directionCombo = new JComboBox<>(new String[] {"Upwards", "Downwards"});
     private final JScrollPane requestsScrollPane = new JScrollPane(requestsField);
 
+    // Real-time validation messages
     private final JLabel maxError = errorLabel();
     private final JLabel headError = errorLabel();
     private final JLabel requestsError = errorLabel();
     private final JLabel requestCountLabel = new JLabel("0 / 100 requests");
 
+    // Buttons and output
     private final JButton simulateButton = new JButton("Simulate C-LOOK");
     private final JButton resetButton = new JButton("Reset");
     private final JButton sampleInputButton = new JButton("Load Sample Data");
@@ -33,6 +39,7 @@ public class CLook extends JFrame {
     private final JTextArea stepMovementValue = new JTextArea("Movement for each step will appear here.", 5, 40);
     private final DiskChart chart = new DiskChart();
 
+    // Constructor
     public CLook() {
         this(null);
     }
@@ -49,8 +56,7 @@ public class CLook extends JFrame {
         root.setBackground(new Color(250, 248, 239));
         setContentPane(root);
 
-        // Keep the full interface in a vertical scroll pane so the chart and
-        // results remain accessible when the window is short.
+        // Make scrollable vertically
         JPanel page = new ScrollablePage(new BorderLayout(16, 16));
         page.setBorder(new EmptyBorder(18, 20, 18, 20));
         page.setBackground(new Color(250, 248, 239));
@@ -68,8 +74,6 @@ public class CLook extends JFrame {
         JPanel content = new JPanel();
         content.setOpaque(false);
         content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
-        // The content keeps its preferred height; the scroll pane handles
-        // overflow instead of squeezing the graph.
         content.setBorder(new EmptyBorder(0, 0, 2, 0));
         content.setAlignmentX(Component.LEFT_ALIGNMENT);
         content.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
@@ -224,9 +228,6 @@ public class CLook extends JFrame {
         chart.setMinimumSize(new Dimension(280, 320));
         chartCard.add(chart, BorderLayout.CENTER);
 
-        // Use BorderLayout.EAST so the toggle is anchored to the far-right
-        // edge of the full-width graph footer (rather than merely right-aligned
-        // inside a panel that may only be as wide as the button itself).
         JPanel graphControls = new JPanel(new BorderLayout());
         graphControls.setOpaque(false);
         showDotLabelsButton.setFocusPainted(false);
@@ -255,6 +256,7 @@ public class CLook extends JFrame {
         validateAll();
     }
 
+    // Back and Exit buttons at the top of the window
     private JPanel createNavigationPanel() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(new Color(245, 240, 250));
@@ -274,6 +276,7 @@ public class CLook extends JFrame {
         return panel;
     }
 
+    // Red labels for input errors
     private static JLabel errorLabel() {
         JLabel label = new JLabel(" ");
         label.setForeground(new Color(190, 45, 45));
@@ -412,6 +415,7 @@ public class CLook extends JFrame {
         label.setText(message);
     }
 
+    // Clear inputs
     private void resetForm() {
         diskSizeField.setText("");
         headField.setText("");
@@ -424,6 +428,7 @@ public class CLook extends JFrame {
         validateAll();
     }
 
+    // Generate Sample Input
     private void generateSampleInput() {
         diskSizeField.setText("200");
         headField.setText("67");
@@ -449,6 +454,7 @@ public class CLook extends JFrame {
         int count;
     }
 
+    // Splits the requests by spaces/commas and converts to integer
     private RequestParse parseRequests(String text) {
         RequestParse result = new RequestParse();
         if (text.trim().isEmpty()) return result;
@@ -475,41 +481,59 @@ public class CLook extends JFrame {
         return result;
     }
 
+    // C-LOOK ALGORITHM
     private void simulate() {
         Integer diskSize = parseInteger(diskSizeField.getText().trim());
-        Integer head = parseInteger(headField.getText().trim());
+        Integer initialHead = parseInteger(headField.getText().trim());
         RequestParse parsed = parseRequests(requestsField.getText().trim());
-        if (diskSize == null || head == null || parsed.error != null || parsed.values.isEmpty()) return;
-        int maxCylinder = diskSize - 1;
 
-        List<Integer> higher = new ArrayList<>();
-        List<Integer> lower = new ArrayList<>();
-        for (int request : parsed.values) {
-            if (request >= head) higher.add(request);
-            else lower.add(request);
+        if (diskSize == null || initialHead == null
+                || parsed.error != null || parsed.values.isEmpty()) {
+            return;
         }
 
+        int head = initialHead;
+
+        // Separate requests on either side of the initial head
+        List<Integer> left = new ArrayList<>();
+        List<Integer> right = new ArrayList<>();
+
+        for (int request : parsed.values) {
+            // A smaller cylinder number is on the left/lower side of the current head
+            if (request < head) {
+                left.add(request);
+            } else if (request > head) {
+                right.add(request);
+            } else {
+                // A request already at the head is serviced with zero movement
+                right.add(request);
+            }
+        }
+
+        // Sort both groups so requests are serviced in cylinder-number order
+        Collections.sort(left);
+        Collections.sort(right);
+
+        // The seek sequence begins at the initial head position.
         List<Integer> order = new ArrayList<>();
         order.add(head);
+
+        // UPWARDS: service higher cylinders first, then wrap to the lowest request
         if ("Upwards".equals(directionCombo.getSelectedItem())) {
-            Collections.sort(higher);
-            Collections.sort(lower);
-            // C-LOOK upwards: service higher requests ascending, then circularly
-            // jump to the lowest pending request and continue ascending.
-            order.addAll(higher);
-            order.addAll(lower);
+            order.addAll(right);
+            order.addAll(left);
         } else {
-            Collections.sort(lower, Collections.reverseOrder());
-            Collections.sort(higher, Collections.reverseOrder());
-            // C-LOOK downwards: service lower requests descending, then jump
-            // to the highest pending request and continue descending.
-            order.addAll(lower);
-            order.addAll(higher);
+            Collections.sort(left, Collections.reverseOrder());
+            Collections.sort(right, Collections.reverseOrder());
+            order.addAll(left);
+            order.addAll(right);
         }
 
         long movement = 0;
-        for (int i = 1; i < order.size(); i++)
+        for (int i = 1; i < order.size(); i++) {
+            // Math.abs gives a positive distance regardless of movement direction.
             movement += Math.abs(order.get(i) - order.get(i - 1));
+        }
 
         double average = (double) movement / parsed.values.size();
         totalMovementValue.setText(String.format(Locale.US, "%.2f", (double) movement));
@@ -526,7 +550,7 @@ public class CLook extends JFrame {
         }
         stepDetails.append(String.format(Locale.US, "Total movement: %d ms", movement));
         stepMovementValue.setText(stepDetails.toString());
-        chart.setSimulation(order, maxCylinder);
+        chart.setSimulation(order, diskSize - 1);
     }
 
     private String join(List<Integer> values, String separator) {
@@ -538,12 +562,6 @@ public class CLook extends JFrame {
         return builder.toString();
     }
 
-    /**
-     * A page that follows the viewport width while retaining its preferred
-     * height. This lets cards and the graph shrink to the window width without
-     * creating horizontal overflow; vertical overflow is handled by the
-     * enclosing JScrollPane.
-     */
     private static class ScrollablePage extends JPanel implements Scrollable {
         ScrollablePage(LayoutManager layout) {
             super(layout);
@@ -575,6 +593,7 @@ public class CLook extends JFrame {
         }
     }
 
+    // Graph
     private class DiskChart extends JPanel {
         private List<Integer> sequence = new ArrayList<>();
         private int maxCylinder = 199;
@@ -630,7 +649,6 @@ public class CLook extends JFrame {
                 return;
             }
 
-            // X-axis shows cylinder numbers from 0 to the selected maximum.
             for (int i = 0; i <= 5; i++) {
                 int value = (int)Math.round((double)maxCylinder * i / 5);
                 int x = left + i * plotW / 5;
@@ -643,7 +661,6 @@ public class CLook extends JFrame {
             int[] xs = new int[n];
             int[] ys = new int[n];
             for (int i = 0; i < n; i++) {
-                // Cylinder position is horizontal; service order runs downward.
                 xs[i] = left + (int)Math.round((double)sequence.get(i) / Math.max(1, maxCylinder) * plotW);
                 ys[i] = top + (n == 1 ? plotH / 2 : (int)((long)i * plotH / (n - 1)));
             }
