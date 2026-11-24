@@ -1,3 +1,5 @@
+
+
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -40,19 +42,32 @@ import javax.swing.table.DefaultTableModel;
 public class SRTF extends JFrame {
     private final JFrame mainMenu;
 
+    // ================================================================
+    // 1. VARIABLES USED BY THE PROGRAM
+    // ================================================================
+
+    // Colors used in the interface
+
     private static final Color DARK_GREEN = new Color(30, 75, 66);
     private static final Color LIGHT_GREEN = new Color(226, 239, 233);
+
+    // Input section: process count and input table
 
     private JSpinner processCountSpinner;
     private JTable inputTable;
     private DefaultTableModel inputModel;
 
+    // Output section: results table
+
     private JTable resultTable;
     private DefaultTableModel resultModel;
 
+    // Labels that display totals, averages, and performance
     private JLabel totalLabel;
     private JLabel averageLabel;
     private JLabel performanceLabel;
+
+    // Other interface variables: zoom, queue, and Gantt Chart
 
     private double zoomLevel = 1.0;
     private final Map<Component, Font> originalFonts =
@@ -60,16 +75,23 @@ public class SRTF extends JFrame {
     private JTextArea queueArea;
     private GanttPanel ganttPanel;
 
+    // ================================================================
+    // 2. PROCESS AND GANTT CHART DATA
+    // ================================================================
+
+    // Stores the input and calculated values for one process
+
+    // Stores the details and computed times of each process
     private static class Process {
-        String id;
-        int arrivalTime;
-        int burstTime;
-        int remainingTime;
-        int completionTime;
-        int turnaroundTime;
-        int waitingTime;
-        int responseTime = -1;
-        int inputOrder;
+        String id;             // Process name, such as P1 or P2
+        int arrivalTime;       // Time when the process enters the ready queue
+        int burstTime;         // Total CPU time needed by the process
+        int remainingTime;     // CPU time the process still needs
+        int completionTime;    // Time when the process finishes
+        int turnaroundTime;    // Completion Time - Arrival Time
+        int waitingTime;       // Turnaround Time - Burst Time
+        int responseTime = -1; // First time the process gets the CPU
+        int inputOrder;        // Original row position in the input table
 
         Process(String id, int arrivalTime, int burstTime, int inputOrder) {
             this.id = id;
@@ -80,10 +102,11 @@ public class SRTF extends JFrame {
         }
     }
 
+    // Stores one block in the Gantt Chart and its start/end time
     private static class Segment {
-        String processID;
-        int startTime;
-        int endTime;
+        String processID; // Process shown in this Gantt Chart block
+        int startTime;    // Start of this block
+        int endTime;      // End of this block
 
         Segment(String processID, int startTime, int endTime) {
             this.processID = processID;
@@ -92,6 +115,10 @@ public class SRTF extends JFrame {
         }
     }
 
+    // ================================================================
+    // 3. WINDOW SETUP
+    // ================================================================
+
     public SRTF() {
         this(null);
     }
@@ -99,7 +126,7 @@ public class SRTF extends JFrame {
     public SRTF(JFrame mainMenu) {
         this.mainMenu = mainMenu;
         setTitle("CPU Scheduling - Shortest Remaining Time First");
-        setDefaultCloseOperation(mainMenu == null ? JFrame.EXIT_ON_CLOSE : JFrame.DISPOSE_ON_CLOSE);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(1100, 750);
         setMinimumSize(new Dimension(850, 600));
         setLocationRelativeTo(null);
@@ -110,6 +137,7 @@ public class SRTF extends JFrame {
         JPanel topPanel = new JPanel(new BorderLayout());
         topPanel.add(createNavigationPanel(), BorderLayout.NORTH);
         topPanel.add(createHeader(), BorderLayout.CENTER);
+
         add(topPanel, BorderLayout.NORTH);
         add(createMainContent(), BorderLayout.CENTER);
 
@@ -118,6 +146,11 @@ public class SRTF extends JFrame {
         setupZoomShortcuts();
     }
 
+    // ================================================================
+    // 4. UI SECTION - NAVIGATION, HEADER AND MAIN LAYOUT
+    // ================================================================
+
+    // Creates the Go Back to Main Menu and Exit buttons
     private JPanel createNavigationPanel() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(new Color(245, 240, 250));
@@ -125,16 +158,20 @@ public class SRTF extends JFrame {
 
         JButton backButton = new JButton("Go Back to Main Menu");
         JButton exitButton = new JButton("Exit");
+
         backButton.addActionListener(e -> {
-        	this.dispose();
-       	 	new MainMenu().setVisible(true);
+            this.dispose();
+            new MainMenu().setVisible(true);
         });
+
         exitButton.addActionListener(e -> System.exit(0));
 
-        JPanel actions = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.RIGHT, 8, 0));
+        JPanel actions = new JPanel(
+                new java.awt.FlowLayout(java.awt.FlowLayout.RIGHT, 8, 0));
         actions.setOpaque(false);
         actions.add(backButton);
         actions.add(exitButton);
+
         panel.add(actions, BorderLayout.EAST);
         return panel;
     }
@@ -161,6 +198,8 @@ public class SRTF extends JFrame {
         return header;
     }
 
+    // Creates the main area and places the input and output sections
+
     private JPanel createMainContent() {
         JPanel main = new JPanel(new BorderLayout(10, 10));
         main.setBackground(Color.WHITE);
@@ -171,19 +210,21 @@ public class SRTF extends JFrame {
         return main;
     }
 
+    // Builds the process input table and its buttons
+
     private JPanel createInputPanel() {
         JPanel panel = new JPanel(new BorderLayout(8, 8));
         panel.setBackground(Color.WHITE);
         panel.setBorder(BorderFactory.createTitledBorder(
                 BorderFactory.createLineBorder(new Color(190, 205, 198)),
-                "PROCESS INPUT (10-20 PROCESSES)"));
+                "PROCESS INPUT (1-20 PROCESSES)"));
 
         JPanel controls = new JPanel();
         controls.setBackground(Color.WHITE);
 
         controls.add(new JLabel("Number of Processes:"));
 
-        processCountSpinner = new JSpinner(new SpinnerNumberModel(10, 10, 20, 1));
+        processCountSpinner = new JSpinner(new SpinnerNumberModel(7, 1, 20, 1));
         processCountSpinner.setPreferredSize(new Dimension(65, 27));
         controls.add(processCountSpinner);
 
@@ -219,8 +260,6 @@ public class SRTF extends JFrame {
         inputTable.setRowHeight(25);
         inputTable.getTableHeader().setFont(new Font("Arial", Font.BOLD, 12));
 
-        // Select the existing number automatically when an input cell is clicked.
-        // Typing a new value will replace the old value instead of adding to it.
         JTextField numberEditorField = new JTextField();
         DefaultCellEditor numberEditor = new DefaultCellEditor(numberEditorField) {
             @Override
@@ -244,6 +283,9 @@ public class SRTF extends JFrame {
         return panel;
     }
 
+    // Builds the tabs for results, Gantt Chart, and process queue
+
+    // Creates the results table, Gantt Chart area, and process queue area
     private JTabbedPane createOutputTabs() {
         JTabbedPane tabs = new JTabbedPane();
 
@@ -302,6 +344,11 @@ public class SRTF extends JFrame {
         return tabs;
     }
 
+    // ================================================================
+    // 5. INPUT BUTTON FUNCTIONS
+    // ================================================================
+
+    // Creates the blank rows based on the selected process count
     private void generateInputRows() {
         if (inputTable != null && inputTable.isEditing()) {
             inputTable.getCellEditor().stopCellEditing();
@@ -315,27 +362,45 @@ public class SRTF extends JFrame {
         }
     }
 
+    // Loads the provided sample process data into the input table
     private void loadSampleData() {
         if (inputTable.isEditing()) {
             inputTable.getCellEditor().stopCellEditing();
         }
-        processCountSpinner.setValue(10);
-        inputModel.setRowCount(0);
-        int[][] sample = {
-            {0, 7}, {2, 4}, {4, 1}, {5, 4}, {6, 3},
-            {8, 2}, {10, 5}, {12, 3}, {14, 4}, {16, 2}
+
+        Object[][] sample = {
+            {"P1", 13, 10},
+            {"P2", 6, 7},
+            {"P5", 1, 8},
+            {"P7", 23, 18},
+            {"P3", 3, 12},
+            {"P6", 38, 5},
+            {"P4", 34, 17}
         };
-        for (int i = 0; i < sample.length; i++) {
-            inputModel.addRow(new Object[]{"P" + (i + 1), sample[i][0], sample[i][1]});
+
+        processCountSpinner.setValue(sample.length);
+        inputModel.setRowCount(0);
+
+        for (Object[] process : sample) {
+            inputModel.addRow(process);
         }
+
         resultModel.setRowCount(0);
-        totalLabel.setText("TOTAL Completion Time (CT): -     TOTAL Turnaround Time (TAT): -     TOTAL Waiting Time (WT): -");
-        averageLabel.setText("AVERAGE Completion Time (CT): -     AVERAGE Turnaround Time (TAT): -     AVERAGE Waiting Time (WT): -");
+
+        totalLabel.setText("TOTAL Completion Time (CT): -     "
+                + "TOTAL Turnaround Time (TAT): -     "
+                + "TOTAL Waiting Time (WT): -");
+
+        averageLabel.setText("AVERAGE Completion Time (CT): -     "
+                + "AVERAGE Turnaround Time (TAT): -     "
+                + "AVERAGE Waiting Time (WT): -");
+
         performanceLabel.setText("CPU Utilization: -     Throughput: -");
         queueArea.setText("");
         ganttPanel.setSegments(new ArrayList<Segment>());
     }
 
+    // Clears the previous results and returns the input table to its defaults
     private void resetApplication() {
         generateInputRows();
         resultModel.setRowCount(0);
@@ -350,6 +415,10 @@ public class SRTF extends JFrame {
         ganttPanel.setSegments(new ArrayList<Segment>());
     }
 
+    // ================================================================
+    // 6. CHECK INPUT AND START THE SRTF CALCULATION
+    // ================================================================
+
     private void calculateScheduling() {
         if (inputTable.isEditing()) {
             inputTable.getCellEditor().stopCellEditing();
@@ -357,13 +426,14 @@ public class SRTF extends JFrame {
 
         int count = inputModel.getRowCount();
 
-        if (count < 10 || count > 20) {
+        if (count < 1 || count > 20) {
             JOptionPane.showMessageDialog(this,
-                    "Please enter between 10 and 20 processes.",
+                    "Please enter between 1 and 20 processes.",
                     "Invalid Process Count", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
+        // Read the values from the table and check if they are valid
         List<Process> processes = new ArrayList<Process>();
         Set<String> usedIDs = new HashSet<String>();
 
@@ -407,6 +477,7 @@ public class SRTF extends JFrame {
             return;
         }
 
+        // These lists will hold the Gantt Chart blocks and queue history
         List<Segment> gantt = new ArrayList<Segment>();
         List<String> queueLog = new ArrayList<String>();
 
@@ -423,78 +494,93 @@ public class SRTF extends JFrame {
         queueArea.setCaretPosition(0);
     }
 
+    // ================================================================
+    // 7. SRTF ALGORITHM
+    // ================================================================
+
+    // At every time unit, choose the arrived process with the shortest
+    // remaining burst time. This is preemptive, so the choice is checked again.
     private void executeSRTF(List<Process> processes,
                              List<Segment> gantt,
                              List<String> queueLog) {
+        // Step 1: Sort processes by arrival time, like the reference code
+        List<Process> sorted = new ArrayList<Process>(processes);
+        sorted.sort(Comparator.comparingInt(p -> p.arrivalTime));
 
         int time = 0;
         int completed = 0;
-        int total = processes.size();
+        int total = sorted.size();
 
-        Comparator<Process> priority = Comparator
-                .comparingInt((Process p) -> p.remainingTime)
-                .thenComparingInt(p -> p.arrivalTime)
-                .thenComparingInt(p -> p.inputOrder);
-
+        // Continue until every process has finished
         while (completed < total) {
+            Process running = null;
             List<Process> readyQueue = new ArrayList<Process>();
 
-            for (Process p : processes) {
+            // Step 2: Find the arrived process with the shortest remaining time
+            for (Process p : sorted) {
+                if (p.arrivalTime <= time && p.remainingTime > 0 &&
+                        (running == null ||
+                         p.remainingTime < running.remainingTime)) {
+                    running = p;
+                }
+
                 if (p.arrivalTime <= time && p.remainingTime > 0) {
                     readyQueue.add(p);
                 }
             }
 
-            readyQueue.sort(priority);
-
-            if (readyQueue.isEmpty()) {
+            // Step 3: If no process is ready, move time forward while CPU is idle
+            if (running == null) {
                 queueLog.add("TIME " + time + "\n  CPU IDLE - No process has arrived.");
                 addSegment(gantt, "IDLE", time, time + 1);
                 time++;
                 continue;
             }
 
-            Process running = readyQueue.get(0);
-            if (running.responseTime < 0) {
+            // Step 4: Sort the queue only for displaying it on the screen
+            // The running process was already selected using the reference logic
+            readyQueue.sort(Comparator
+                    .comparingInt((Process p) -> p.remainingTime)
+                    .thenComparingInt(p -> p.arrivalTime)
+                    .thenComparingInt(p -> p.inputOrder));
+
+            // Step 5: Record response time the first time this process runs
+            if (running.responseTime == -1) {
                 running.responseTime = time - running.arrivalTime;
             }
-            StringBuilder snapshot = new StringBuilder();
-            snapshot.append("TIME ").append(time).append("\n");
 
+            StringBuilder snapshot = new StringBuilder("TIME " + time + "\n");
             for (int i = 0; i < readyQueue.size(); i++) {
                 Process p = readyQueue.get(i);
-
-                snapshot.append("  ")
-                        .append(p.id)
-                        .append(" [Remaining: ")
-                        .append(p.remainingTime)
-                        .append(", ")
-                        .append(i == 0 ? "RUNNING" : "READY")
+                snapshot.append("  ").append(p.id)
+                        .append(" [Remaining: ").append(p.remainingTime)
+                        .append(", ").append(p == running ? "RUNNING" : "READY")
                         .append("]");
-
-                if (i < readyQueue.size() - 1) {
-                    snapshot.append("  ->");
-                }
+                if (i < readyQueue.size() - 1) snapshot.append("  ->");
                 snapshot.append("\n");
             }
-
             queueLog.add(snapshot.toString());
 
+            // Step 6: Run the selected process for one time unit
             addSegment(gantt, running.id, time, time + 1);
             running.remainingTime--;
             time++;
 
+            // Step 7: If no time is left, calculate its final times
             if (running.remainingTime == 0) {
                 running.completionTime = time;
-                running.turnaroundTime =
-                        running.completionTime - running.arrivalTime;
-                running.waitingTime =
-                        running.turnaroundTime - running.burstTime;
+                running.turnaroundTime = time - running.arrivalTime;
+                running.waitingTime = running.turnaroundTime - running.burstTime;
                 completed++;
             }
         }
     }
 
+    // ================================================================
+    // 8. GANTT CHART DATA
+    // ================================================================
+
+    // Combines consecutive time units of the same process into one block
     private void addSegment(List<Segment> gantt, String processID,
                             int start, int end) {
         if (!gantt.isEmpty()) {
@@ -509,8 +595,17 @@ public class SRTF extends JFrame {
         gantt.add(new Segment(processID, start, end));
     }
 
+    // ================================================================
+    // 9. DISPLAY RESULTS AND CALCULATE TOTALS / AVERAGES
+    // ================================================================
+
     private void displayResults(List<Process> processes) {
         resultModel.setRowCount(0);
+
+        // CT  = time when a process finishes
+        // TAT = CT - AT
+        // WT  = TAT - BT
+        // RT  = first time the process runs - AT
 
         int totalCT = 0;
         int totalTAT = 0;
@@ -566,6 +661,11 @@ public class SRTF extends JFrame {
                 (double) totalRT / n, cpuUtilization, throughput));
     }
 
+    // ================================================================
+    // 10. ZOOM FUNCTIONS AND KEYBOARD SHORTCUTS
+    // ================================================================
+
+    // Saves the original font sizes so the zoom can be reset later
     private void captureOriginalFonts(Container container) {
         for (Component component : container.getComponents()) {
             if (component.getFont() != null) {
@@ -617,6 +717,7 @@ public class SRTF extends JFrame {
         repaint();
     }
 
+    // Sets the keyboard shortcuts for zooming in, out, and resetting
     private void setupZoomShortcuts() {
         javax.swing.JRootPane root = getRootPane();
         int condition = javax.swing.JComponent.WHEN_IN_FOCUSED_WINDOW;
@@ -657,6 +758,10 @@ public class SRTF extends JFrame {
             }
         });
     }
+
+    // ================================================================
+    // 11. GANTT CHART UI - DRAWING THE CHART
+    // ================================================================
 
     private static class GanttPanel extends JPanel {
         private List<Segment> segments = new ArrayList<Segment>();
@@ -757,6 +862,10 @@ public class SRTF extends JFrame {
             g2.dispose();
         }
     }
+
+    // ================================================================
+    // 12. MAIN METHOD - START THE APPLICATION
+    // ================================================================
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
