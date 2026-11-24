@@ -54,7 +54,7 @@ public class MainMenu extends JFrame {
                         BorderFactory.createLineBorder(new Color(218, 204, 233)),
                         "ABOUT THE KERNELS"),
                 new EmptyBorder(8, 12, 8, 12)));
-        JLabel members = new JLabel("<html><b>Group Name:</b> The Kernels<br>"
+        JLabel members = new JLabel("<html><b>3-ITB Group #1:</b> The Kernels<br>"
                 + "<b>Members:</b> ALBERTO, Jandrel Jimwee C. &nbsp;|&nbsp; "
                 + "ARMAS, Francisco III I. &nbsp;|&nbsp; DIZON, Adrian D. &nbsp;|&nbsp; "
                 + "LINGAD, Immanuel Marcus T.</html>");
