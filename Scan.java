@@ -5,7 +5,7 @@ import java.util.List;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
-
+// COMMENT
 public class Scan extends JFrame {
     private final JFrame mainMenu;
 
