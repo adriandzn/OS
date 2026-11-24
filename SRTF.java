@@ -118,8 +118,13 @@ public class SRTF extends JFrame {
     // ================================================================
 
     public SRTF() {
+        this(null);
+    }
+
+    public SRTF(JFrame mainMenu) {
+        this.mainMenu = mainMenu;
         setTitle("CPU Scheduling - Shortest Remaining Time First");
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(mainMenu == null ? JFrame.EXIT_ON_CLOSE : JFrame.DISPOSE_ON_CLOSE);
         setSize(1100, 750);
         setMinimumSize(new Dimension(850, 600));
         setLocationRelativeTo(null);
@@ -127,12 +132,36 @@ public class SRTF extends JFrame {
         setLayout(new BorderLayout(10, 10));
         getContentPane().setBackground(Color.WHITE);
 
-        add(createHeader(), BorderLayout.NORTH);
+        JPanel topPanel = new JPanel(new BorderLayout());
+        topPanel.add(createNavigationPanel(), BorderLayout.NORTH);
+        topPanel.add(createHeader(), BorderLayout.CENTER);
+        add(topPanel, BorderLayout.NORTH);
         add(createMainContent(), BorderLayout.CENTER);
 
         generateInputRows();
         captureOriginalFonts(getContentPane());
         setupZoomShortcuts();
+    }
+
+    private JPanel createNavigationPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBackground(new Color(245, 240, 250));
+        panel.setBorder(BorderFactory.createEmptyBorder(7, 12, 7, 12));
+
+        JButton backButton = new JButton("Go Back to Main Menu");
+        JButton exitButton = new JButton("Exit");
+        backButton.addActionListener(e -> {
+        	this.dispose();
+       	 	new MainMenu().setVisible(true);
+        });
+        exitButton.addActionListener(e -> System.exit(0));
+
+        JPanel actions = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.RIGHT, 8, 0));
+        actions.setOpaque(false);
+        actions.add(backButton);
+        actions.add(exitButton);
+        panel.add(actions, BorderLayout.EAST);
+        return panel;
     }
 
     // ================================================================
@@ -835,25 +864,5 @@ public class SRTF extends JFrame {
             SRTF app = new SRTF();
             app.setVisible(true);
         });
-    }
-    private JPanel createNavigationPanel() {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(new Color(245, 240, 250));
-        panel.setBorder(BorderFactory.createEmptyBorder(7, 12, 7, 12));
-
-        JButton backButton = new JButton("Go Back to Main Menu");
-        JButton exitButton = new JButton("Exit");
-        backButton.addActionListener(e -> {
-        	this.dispose();
-       	 	new MainMenu().setVisible(true);
-        });
-        exitButton.addActionListener(e -> System.exit(0));
-
-        JPanel actions = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.RIGHT, 8, 0));
-        actions.setOpaque(false);
-        actions.add(backButton);
-        actions.add(exitButton);
-        panel.add(actions, BorderLayout.EAST);
-        return panel;
     }
 }
