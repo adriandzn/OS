@@ -7,7 +7,6 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
 
-
 public class Scan extends JFrame {
     private final JFrame mainMenu;
     private JTextArea reqQueueField;
@@ -82,18 +81,11 @@ public class Scan extends JFrame {
         gbc.gridx = 1; gbc.gridwidth = 3; gbc.fill = GridBagConstraints.BOTH;
         inputPanel.add(requestQueueScroll, gbc);
 
-        JLabel queueLimitNote = new JLabel("Minimum: 1. Maximum: 100");
-        queueLimitNote.setFont(new Font("Segoe UI", Font.ITALIC, 12));
-        queueLimitNote.setForeground(new Color(90, 100, 100));
-        gbc.gridx = 1; gbc.gridy = 1; gbc.gridwidth = 3;
         gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.insets = new Insets(0, 10, 5, 10);
-        inputPanel.add(queueLimitNote, gbc);
-        gbc.insets = new Insets(10, 10, 10, 10);
 
         // Row 2
         gbc.gridwidth = 1;
-        gbc.gridx = 0; gbc.gridy = 2;
+        gbc.gridx = 0; gbc.gridy = 1;
         inputPanel.add(new JLabel("Initial Head Position:"), gbc);
         headPosField = new JTextField(10);
         gbc.gridx = 1;
@@ -107,7 +99,7 @@ public class Scan extends JFrame {
         inputPanel.add(diskSizeField, gbc);
 
         // Row 3
-        gbc.gridx = 0; gbc.gridy = 3;
+        gbc.gridx = 0; gbc.gridy = 2;
         inputPanel.add(new JLabel("Initial Direction:"), gbc);
         directionBox = new JComboBox<>(new String[]{"Up (Towards Max)", "Down (Towards 0)"});
         gbc.gridx = 1;
@@ -132,7 +124,7 @@ public class Scan extends JFrame {
         buttonPanel.add(sampleBtn);
         buttonPanel.add(clearBtn);
 
-        gbc.gridx = 0; gbc.gridy = 4; gbc.gridwidth = 4;
+        gbc.gridx = 0; gbc.gridy = 3; gbc.gridwidth = 4;
         inputPanel.add(buttonPanel, gbc);
 
         // Code for the Center Panel: Results & Tabs
@@ -257,7 +249,7 @@ public class Scan extends JFrame {
             String queueText = reqQueueField.getText().trim();
             if (queueText.isEmpty()) {
                 JOptionPane.showMessageDialog(this,
-                    "Please enter at least 1 disk request.",
+                    "Please enter at least 20 disk requests.",
                     "Input Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
@@ -277,9 +269,9 @@ public class Scan extends JFrame {
                 }
             }
 
-            if (requests.size() > 100) {
+            if (requests.size() < 20) {
                 JOptionPane.showMessageDialog(this,
-                    "The request queue exceeded the maximum of 100 requests. You entered " + requests.size() + ".",
+                    "Please enter at least 20 requests. You entered " + requests.size() + ".",
                     "Input Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
@@ -292,7 +284,7 @@ public class Scan extends JFrame {
         }
     }
 
-    // GeeksforGeeks SCAN implementation adapted for the GUI
+    // GeeksforGeeks SCAN implementation
     private void calculateScan(List<Integer> requests, int initialHead, int diskSize, String direction) {
         int seek_count = 0;
         int distance, cur_track;
@@ -302,7 +294,6 @@ public class Scan extends JFrame {
         Vector<Integer> right = new Vector<>();
         Vector<Integer> seek_sequence = new Vector<>();
 
-        // Include initial head as the starting point for UI display and graph
         seek_sequence.add(initialHead);
 
         // Appending end values which have to be visited before reversing the direction
@@ -332,34 +323,18 @@ public class Scan extends JFrame {
             if (direction.equals("left")) {
                 for (int i = left.size() - 1; i >= 0; i--) {
                     cur_track = left.get(i);
-
-                    // Appending current track to seek sequence
                     seek_sequence.add(cur_track);
-
-                    // Calculate absolute distance
                     distance = Math.abs(cur_track - head);
-
-                    // Increase the total count
                     seek_count += distance;
-
-                    // Accessed track is now the new head
                     head = cur_track;
                 }
                 direction = "right";
             } else if (direction.equals("right")) {
                 for (int i = 0; i < right.size(); i++) {
                     cur_track = right.get(i);
-
-                    // Appending current track to seek sequence
                     seek_sequence.add(cur_track);
-
-                    // Calculate absolute distance
                     distance = Math.abs(cur_track - head);
-
-                    // Increase the total count
                     seek_count += distance;
-
-                    // Accessed track is now new head
                     head = cur_track;
                 }
                 direction = "left";
