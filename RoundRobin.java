@@ -454,95 +454,139 @@ public class RoundRobin extends JFrame {
         queueArea.setCaretPosition(0);
     }
 
+    // Array-based Round Robin implementation, following the pasted program.
+    // Each process is represented by its index in the input arrays.
     private int executeRoundRobin(List<Process> processes, int quantum,
                                   List<Segment> gantt, List<String> queueLog) {
-        List<Process> byArrival = new ArrayList<Process>(processes);
-        byArrival.sort(Comparator
-                .comparingInt((Process p) -> p.arrivalTime)
-                .thenComparingInt(p -> p.inputOrder));
+        int n = processes.size();
 
-        Queue<Process> readyQueue = new ArrayDeque<Process>();
-        int nextProcess = 0;
-        int completed = 0;
+        int[] at = new int[n];
+        int[] bt = new int[n];
+        int[] rt = new int[n];
+        int[] ct = new int[n];
+        int[] tat = new int[n];
+        int[] wt = new int[n];
+        int[] response = new int[n];
+        int[] firstStart = new int[n];
+        boolean[] added = new boolean[n];
+
+        // A fixed integer array is used as the ready queue, just like the
+        // pasted implementation. front removes; rear appends.
+        int[] queue = new int[2000000];
+        int front = 0;
+        int rear = 0;
         int time = 0;
-        int total = processes.size();
+        int completed = 0;
 
-        while (completed < total) {
-            while (nextProcess < total
-                    && byArrival.get(nextProcess).arrivalTime <= time) {
-                readyQueue.offer(byArrival.get(nextProcess));
-                nextProcess++;
-            }
+        for (int i = 0; i < n; i++) {
+            at[i] = processes.get(i).arrivalTime;
+            bt[i] = processes.get(i).burstTime;
+            rt[i] = bt[i];
+            firstStart[i] = -1;
+            response[i] = 0;
+        }
 
-            if (readyQueue.isEmpty()) {
-                int nextArrival = byArrival.get(nextProcess).arrivalTime;
-                queueLog.add("TIME " + time + "\n  CPU IDLE until time "
-                        + nextArrival + ". No process is ready.");
-                addSegment(gantt, "IDLE", time, nextArrival);
-                time = nextArrival;
+        // Add processes that have arrived at the initial time.
+        rear = queueUpdation(time, n, at, added, queue, rear);
+
+        while (completed < n) {
+            // If no process is ready, move time forward to the next arrival.
+            if (front == rear) {
+                int nextArrival = Integer.MAX_VALUE;
+                for (int i = 0; i < n; i++) {
+                    if (!added[i] && at[i] < nextArrival) {
+                        nextArrival = at[i];
+                    }
+                }
+
+                if (nextArrival != Integer.MAX_VALUE && nextArrival > time) {
+                    queueLog.add("TIME " + time + "\n  CPU IDLE until time "
+                            + nextArrival + ". No process is ready.");
+                    addSegment(gantt, "IDLE", time, nextArrival);
+                    time = nextArrival;
+                }
+                rear = queueUpdation(time, n, at, added, queue, rear);
                 continue;
             }
 
+            int current = queue[front++];
+
             StringBuilder snapshot = new StringBuilder();
             snapshot.append("TIME ").append(time).append("\n");
-            int queuePosition = 0;
-            for (Process queuedProcess : readyQueue) {
-                snapshot.append("  ")
-                        .append(queuedProcess.id)
-                        .append(" [Remaining: ")
-                        .append(queuedProcess.remainingTime)
-                        .append(", ")
-                        .append(queuePosition == 0 ? "RUNNING" : "READY")
-                        .append("]");
-
-                if (queuePosition < readyQueue.size() - 1) {
-                    snapshot.append("  ->");
+            snapshot.append("  RUNNING: ").append(processes.get(current).id)
+                    .append(" [Remaining: ").append(rt[current]).append("]\n");
+            snapshot.append("  READY QUEUE: ");
+            if (front == rear) {
+                snapshot.append("EMPTY");
+            } else {
+                for (int i = front; i < rear; i++) {
+                    snapshot.append(processes.get(queue[i]).id);
+                    if (i < rear - 1) snapshot.append(" -> ");
                 }
-                snapshot.append("\n");
-                queuePosition++;
             }
-
-            Process running = readyQueue.poll();
-            if (running.firstStartTime == -1) {
-                running.firstStartTime = time;
-                running.responseTime = running.firstStartTime - running.arrivalTime;
-            }
-
-            snapshot.append("  TIME QUANTUM: ").append(quantum);
+            snapshot.append("\n  TIME QUANTUM: ").append(quantum);
             queueLog.add(snapshot.toString());
 
-            int executionTime = Math.min(quantum, running.remainingTime);
-            int startTime = time;
-            int endTime = time + executionTime;
-
-            running.remainingTime -= executionTime;
-            time = endTime;
-            addSegment(gantt, running.id, startTime, endTime);
-
-            int arrivalIndex = nextProcess;
-            while (arrivalIndex < total
-                    && byArrival.get(arrivalIndex).arrivalTime <= time) {
-                readyQueue.offer(byArrival.get(arrivalIndex));
-                arrivalIndex++;
+            if (firstStart[current] == -1) {
+                firstStart[current] = time;
+                response[current] = firstStart[current] - at[current];
             }
-            nextProcess = arrivalIndex;
 
-            if (running.remainingTime == 0) {
-                running.completionTime = time;
-                running.turnaroundTime =
-                        running.completionTime - running.arrivalTime;
-                running.waitingTime =
-                        running.turnaroundTime - running.burstTime;
-                completed++;
-                queueLog.add("  " + running.id + " COMPLETED at time " + time + ".");
+            int startTime = time;
+            int executionTime = Math.min(quantum, rt[current]);
+            rt[current] -= executionTime;
+            time += executionTime;
+            addSegment(gantt, processes.get(current).id, startTime, time);
+
+            // Add every process that arrived during this time slice before
+            // placing the interrupted process at the back of the queue.
+            rear = queueUpdation(time, n, at, added, queue, rear);
+
+            if (rt[current] > 0) {
+                rear = queueMaintainence(queue, rear, current);
+                queueLog.add("  " + processes.get(current).id
+                        + " used its time quantum and was placed at the end "
+                        + "of the ready queue. Remaining time: "
+                        + rt[current] + ".");
             } else {
-                readyQueue.offer(running);
-                queueLog.add("  " + running.id + " used its time quantum and was "
-                        + "placed at the end of the ready queue. Remaining time: "
-                        + running.remainingTime + ".");
+                ct[current] = time;
+                completed++;
+                queueLog.add("  " + processes.get(current).id
+                        + " COMPLETED at time " + time + ".");
             }
         }
+
+        // Calculate CT, TAT and WT using the same array-based formulas.
+        for (int i = 0; i < n; i++) {
+            tat[i] = ct[i] - at[i];
+            wt[i] = tat[i] - bt[i];
+
+            Process process = processes.get(i);
+            process.completionTime = ct[i];
+            process.turnaroundTime = tat[i];
+            process.waitingTime = wt[i];
+            process.responseTime = response[i];
+        }
+
         return time;
+    }
+
+    // Adds newly arrived processes to the integer-array ready queue once.
+    private int queueUpdation(int currentTime, int n, int[] at,
+                              boolean[] added, int[] queue, int rear) {
+        for (int i = 0; i < n; i++) {
+            if (at[i] <= currentTime && !added[i]) {
+                queue[rear++] = i;
+                added[i] = true;
+            }
+        }
+        return rear;
+    }
+
+    // Places a process that did not finish within its quantum at the rear.
+    private int queueMaintainence(int[] queue, int rear, int processIndex) {
+        queue[rear++] = processIndex;
+        return rear;
     }
 
     private void addSegment(List<Segment> gantt, String processID,
