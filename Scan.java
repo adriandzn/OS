@@ -6,9 +6,10 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
 // COMMENT
+//Hi guys 
+
 public class Scan extends JFrame {
     private final JFrame mainMenu;
-
     private JTextArea reqQueueField;
     private JTextField headPosField, diskSizeField;
     private JComboBox<String> directionBox;
@@ -21,7 +22,8 @@ public class Scan extends JFrame {
     private final Font MAIN_FONT = new Font("Segoe UI", Font.PLAIN, 14);
     private final Font BOLD_FONT = new Font("Segoe UI", Font.BOLD, 14);
    
-    // Code to implement a Teal/Mint Palette
+    // Code to implement a Teal/Mint Palette1
+    // Primary Teal for buttons and borders
     private final Color PRIMARY_COLOR = new Color(0, 150, 136);      // Teal
     private final Color PANEL_BG = new Color(242, 250, 249);         // Very light mint for panels
     private final Color GRAPH_LINE_COLOR = new Color(38, 166, 154);  // Medium Teal
