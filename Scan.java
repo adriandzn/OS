@@ -9,7 +9,7 @@ import javax.swing.border.TitledBorder;
 
 public class Scan extends JFrame {
     private final JFrame mainMenu;
-    private JTextArea reqQueueField;
+    private PlaceholderTextArea reqQueueField;
     private JTextField headPosField, diskSizeField;
     private JComboBox<String> directionBox;
     private JTextArea sequenceArea, movementDetailsArea;
@@ -17,11 +17,11 @@ public class Scan extends JFrame {
     private GraphPanel graphPanel;
     private JTabbedPane tabbedPane;
 
-    //  To have a Blue-Green them constratints for the UI DESIGN
+    // To have a Blue-Green theme constraints for the UI DESIGN
     private final Font MAIN_FONT = new Font("Segoe UI", Font.PLAIN, 14);
     private final Font BOLD_FONT = new Font("Segoe UI", Font.BOLD, 14);
-   
-    // Code to implement a Teal/Mint Palette1
+
+    // Code to implement a Teal/Mint Palette
     private final Color PRIMARY_COLOR = new Color(0, 150, 136);      // Teal
     private final Color PANEL_BG = new Color(242, 250, 249);         // Very light mint for panels
     private final Color GRAPH_LINE_COLOR = new Color(38, 166, 154);  // Medium Teal
@@ -51,26 +51,26 @@ public class Scan extends JFrame {
         setDefaultCloseOperation(mainMenu == null ? JFrame.EXIT_ON_CLOSE : JFrame.DISPOSE_ON_CLOSE);
         setLocationRelativeTo(null);
         setLayout(new BorderLayout(15, 15));
-        ((JPanel)getContentPane()).setBorder(new EmptyBorder(10, 10, 10, 10));
+        ((JPanel) getContentPane()).setBorder(new EmptyBorder(10, 10, 10, 10));
         getContentPane().setBackground(Color.WHITE);
 
-        //Code for the Input Panel with a Blue-Green Theme
+        // Code for the Input Panel with a Blue-Green Theme
         JPanel inputPanel = new JPanel(new GridBagLayout());
         inputPanel.setBorder(BorderFactory.createTitledBorder(
                 BorderFactory.createLineBorder(PRIMARY_COLOR, 1),
                 " Required Inputs ", TitledBorder.LEFT, TitledBorder.TOP, BOLD_FONT, PRIMARY_COLOR));
         inputPanel.setBackground(PANEL_BG);
-       
+
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.insets = new Insets(10, 10, 10, 10);
 
-        // Row 1: Request queue with automatic line wrapping
+        // Row 1: Request queue with automatic line wrapping and placeholder
         gbc.gridx = 0; gbc.gridy = 0;
         gbc.anchor = GridBagConstraints.NORTHWEST;
         inputPanel.add(new JLabel("Request Queue (comma/space separated):"), gbc);
 
-        reqQueueField = new JTextArea(3, 35);
+        reqQueueField = new PlaceholderTextArea("Enter disk requests (minimum 20, maximum 100)...", 3, 35);
         reqQueueField.setLineWrap(true);
         reqQueueField.setWrapStyleWord(true);
         reqQueueField.setFont(MAIN_FONT);
@@ -108,18 +108,18 @@ public class Scan extends JFrame {
         // Code for the Buttons Panel
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 0));
         buttonPanel.setOpaque(false);
-       
+
         JButton runBtn = new JButton("Run SCAN");
         runBtn.setBackground(PRIMARY_COLOR);
         runBtn.setForeground(Color.WHITE);
         runBtn.setFont(BOLD_FONT);
         runBtn.setFocusPainted(false);
-        runBtn.setOpaque(true);            
-        runBtn.setContentAreaFilled(true);  
-       
+        runBtn.setOpaque(true);
+        runBtn.setContentAreaFilled(true);
+
         JButton sampleBtn = new JButton("Load Sample Data");
         JButton clearBtn = new JButton("Reset / Clear");
-       
+
         buttonPanel.add(runBtn);
         buttonPanel.add(sampleBtn);
         buttonPanel.add(clearBtn);
@@ -130,14 +130,14 @@ public class Scan extends JFrame {
         // Code for the Center Panel: Results & Tabs
         JPanel centerPanel = new JPanel(new BorderLayout(10, 10));
         centerPanel.setBackground(Color.WHITE);
-       
+
         // Code to have a sequence panel
         JPanel sequencePanel = new JPanel(new BorderLayout(5, 5));
         sequencePanel.setBackground(Color.WHITE);
         sequencePanel.setBorder(BorderFactory.createTitledBorder(
-            BorderFactory.createLineBorder(PRIMARY_COLOR, 1),
-            " SCAN Results ", TitledBorder.LEFT, TitledBorder.TOP, BOLD_FONT, PRIMARY_COLOR));
-       
+                BorderFactory.createLineBorder(PRIMARY_COLOR, 1),
+                " SCAN Results ", TitledBorder.LEFT, TitledBorder.TOP, BOLD_FONT, PRIMARY_COLOR));
+
         sequenceArea = new JTextArea(3, 20);
         sequenceArea.setEditable(false);
         sequenceArea.setLineWrap(true);
@@ -145,7 +145,7 @@ public class Scan extends JFrame {
         sequenceArea.setBorder(new EmptyBorder(5, 5, 5, 5));
         sequenceArea.setBackground(PANEL_BG);
         sequencePanel.add(new JScrollPane(sequenceArea), BorderLayout.CENTER);
-       
+
         // Code for the Statistics Panel
         JPanel statsPanel = new JPanel(new GridLayout(1, 2, 10, 0));
         statsPanel.setBackground(Color.WHITE);
@@ -165,18 +165,18 @@ public class Scan extends JFrame {
         // Code for the Tabs
         tabbedPane = new JTabbedPane();
         tabbedPane.setFont(MAIN_FONT);
-       
+
         movementDetailsArea = new JTextArea();
         movementDetailsArea.setEditable(false);
         movementDetailsArea.setFont(new Font("Consolas", Font.PLAIN, 14));
         movementDetailsArea.setBorder(new EmptyBorder(10, 10, 10, 10));
         movementDetailsArea.setBackground(PANEL_BG);
         tabbedPane.addTab("Movement Details", new JScrollPane(movementDetailsArea));
-       
+
         graphPanel = new GraphPanel();
         graphPanel.setBackground(Color.WHITE);
         tabbedPane.addTab("Head Path Graph", graphPanel);
-       
+
         centerPanel.add(tabbedPane, BorderLayout.CENTER);
         JPanel body = new JPanel(new BorderLayout(15, 15));
         body.setBackground(Color.WHITE);
@@ -208,7 +208,9 @@ public class Scan extends JFrame {
         JButton exitButton = new JButton("Exit");
         backButton.addActionListener(e -> {
             this.dispose();
-            new MainMenu().setVisible(true);
+            if (mainMenu != null) {
+                mainMenu.setVisible(true);
+            }
         });
         exitButton.addActionListener(e -> System.exit(0));
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
@@ -249,7 +251,7 @@ public class Scan extends JFrame {
             String queueText = reqQueueField.getText().trim();
             if (queueText.isEmpty()) {
                 JOptionPane.showMessageDialog(this,
-                    "Please enter at least 20 disk requests.",
+                    "Please enter between 20 and 100 disk requests.",
                     "Input Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
@@ -269,9 +271,9 @@ public class Scan extends JFrame {
                 }
             }
 
-            if (requests.size() < 20) {
+            if (requests.size() < 20 || requests.size() > 100) {
                 JOptionPane.showMessageDialog(this,
-                    "Please enter at least 20 requests. You entered " + requests.size() + ".",
+                    "Please enter between 20 and 100 requests. You entered " + requests.size() + ".",
                     "Input Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
@@ -352,7 +354,7 @@ public class Scan extends JFrame {
         for (int i = 0; i < sequence.size(); i++) {
             seqStr.append(sequence.get(i));
             if (i < sequence.size() - 1) seqStr.append("  →  ");
-           
+
             if (i > 0) {
                 int start = sequence.get(i - 1);
                 int end = sequence.get(i);
@@ -363,7 +365,7 @@ public class Scan extends JFrame {
 
         sequenceArea.setText(seqStr.toString());
         movementDetailsArea.setText(details.toString());
-        
+
         totalMovementLabel.setText("Total Head Movement: " + totalMovement + " ms");
         double avg = originalReqCount == 0 ? 0 : (double) totalMovement / originalReqCount;
         avgSeekLabel.setText(String.format("Average Seek Distance: %.2f ms/request", avg));
@@ -373,8 +375,10 @@ public class Scan extends JFrame {
     }
 
     private void clearFields() {
-        reqQueueField.setText(""); headPosField.setText("");
-        sequenceArea.setText(""); movementDetailsArea.setText("");
+        reqQueueField.setText("");
+        headPosField.setText("");
+        sequenceArea.setText("");
+        movementDetailsArea.setText("");
         totalMovementLabel.setText("Total Head Movement: --");
         avgSeekLabel.setText("Average Seek Distance: --");
         graphPanel.setGraphData(null, 200);
@@ -386,7 +390,32 @@ public class Scan extends JFrame {
         });
     }
 
-    //Code to achieve an enhanced graph panel
+    // Custom JTextArea that paints placeholder text when empty
+    static class PlaceholderTextArea extends JTextArea {
+        private final String placeholder;
+
+        public PlaceholderTextArea(String placeholder, int rows, int columns) {
+            super(rows, columns);
+            this.placeholder = placeholder;
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            if (getText().isEmpty() && placeholder != null && !placeholder.isEmpty()) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+                g2.setColor(Color.GRAY);
+                g2.setFont(getFont().deriveFont(Font.ITALIC));
+                Insets insets = getInsets();
+                FontMetrics fm = g2.getFontMetrics();
+                g2.drawString(placeholder, insets.left + 4, insets.top + fm.getAscent() + 2);
+                g2.dispose();
+            }
+        }
+    }
+
+    // Code to achieve an enhanced graph panel
     class GraphPanel extends JPanel {
         private List<Integer> sequence;
         private int diskSize = 200;
@@ -437,7 +466,7 @@ public class Scan extends JFrame {
             g2.setColor(GRAPH_NODE_COLOR);
             g2.drawString("0", PADDING_LEFT - 5, height - PADDING_BOTTOM + 20);
             g2.drawString(String.valueOf(diskSize - 1), width - PADDING_RIGHT - 15, height - PADDING_BOTTOM + 20);
-            
+
             g2.drawString("Cylinders", width / 2 - 25, height - PADDING_BOTTOM + 35);
             g2.drawString("Step", PADDING_LEFT - 35, PADDING_TOP - 5);
 
@@ -454,23 +483,23 @@ public class Scan extends JFrame {
             // Draw Lines and Nodes
             for (int i = 0; i < points.size(); i++) {
                 Point p = points.get(i);
-               
-                // This is for the  Line connecting to the previous point
+
+                // This is for the Line connecting to the previous point
                 if (i > 0) {
                     Point prev = points.get(i - 1);
                     g2.setColor(GRAPH_LINE_COLOR);
                     g2.setStroke(new BasicStroke(2.5f));
                     g2.drawLine(prev.x, prev.y, p.x, p.y);
                 }
-               
+
                 // This is for drawing the Data Node
                 g2.setColor(GRAPH_NODE_COLOR);
                 g2.fillOval(p.x - 6, p.y - 6, 12, 12);
-               
-                // This the code is for drawing Cylinder Label Text above the node
+
+                // This is for drawing Cylinder Label Text above the node
                 g2.setColor(Color.DARK_GRAY);
                 g2.setFont(new Font("Segoe UI", Font.BOLD, 11));
-               
+
                 int labelX = p.x + 8;
                 int labelY = p.y - 8;
                 if (i > 0 && points.get(i - 1).x > p.x) {
