@@ -2,6 +2,7 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Vector;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
@@ -23,7 +24,6 @@ public class Scan extends JFrame {
     private final Font BOLD_FONT = new Font("Segoe UI", Font.BOLD, 14);
    
     // Code to implement a Teal/Mint Palette1
-    // Primary Teal for buttons and borders
     private final Color PRIMARY_COLOR = new Color(0, 150, 136);      // Teal
     private final Color PANEL_BG = new Color(242, 250, 249);         // Very light mint for panels
     private final Color GRAPH_LINE_COLOR = new Color(38, 166, 154);  // Medium Teal
@@ -136,8 +136,6 @@ public class Scan extends JFrame {
         gbc.gridx = 0; gbc.gridy = 4; gbc.gridwidth = 4;
         inputPanel.add(buttonPanel, gbc);
 
-
-
         // Code for the Center Panel: Results & Tabs
         JPanel centerPanel = new JPanel(new BorderLayout(10, 10));
         centerPanel.setBackground(Color.WHITE);
@@ -218,8 +216,8 @@ public class Scan extends JFrame {
         JButton backButton = new JButton("Go Back to Main Menu");
         JButton exitButton = new JButton("Exit");
         backButton.addActionListener(e -> {
-        	this.dispose();
-       	 	new MainMenu().setVisible(true);
+            this.dispose();
+            new MainMenu().setVisible(true);
         });
         exitButton.addActionListener(e -> System.exit(0));
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
@@ -243,7 +241,7 @@ public class Scan extends JFrame {
         try {
             int diskSize = Integer.parseInt(diskSizeField.getText().trim());
             int headPos = Integer.parseInt(headPosField.getText().trim());
-            boolean dirUp = directionBox.getSelectedIndex() == 0;
+            String direction = (directionBox.getSelectedIndex() == 0) ? "right" : "left";
 
             if (diskSize <= 0) {
                 JOptionPane.showMessageDialog(this, "Disk size must be greater than 0.",
@@ -287,7 +285,7 @@ public class Scan extends JFrame {
                 return;
             }
 
-            calculateScan(requests, headPos, diskSize, dirUp);
+            calculateScan(requests, headPos, diskSize, direction);
 
         } catch (NumberFormatException ex) {
             JOptionPane.showMessageDialog(this, "Please enter valid numeric integers.",
@@ -295,58 +293,88 @@ public class Scan extends JFrame {
         }
     }
 
-    private void calculateScan(List<Integer> requests, int initialHead, int diskSize, boolean dirUp) {
-        List<Integer> left = new ArrayList<>();
-        List<Integer> right = new ArrayList<>();
-        List<Integer> sequence = new ArrayList<>();
+    // GeeksforGeeks SCAN implementation adapted for the GUI
+    private void calculateScan(List<Integer> requests, int initialHead, int diskSize, String direction) {
+        int seek_count = 0;
+        int distance, cur_track;
+        int head = initialHead;
 
-        for (int req : requests) {
-            if (req < initialHead && !left.contains(req)) left.add(req);
-            if (req > initialHead && !right.contains(req)) right.add(req);
+        Vector<Integer> left = new Vector<>();
+        Vector<Integer> right = new Vector<>();
+        Vector<Integer> seek_sequence = new Vector<>();
+
+        // Include initial head as the starting point for UI display and graph
+        seek_sequence.add(initialHead);
+
+        // Appending end values which have to be visited before reversing the direction
+        if (direction.equals("left")) {
+            left.add(0);
+        } else if (direction.equals("right")) {
+            right.add(diskSize - 1);
         }
 
-        // Standard SCAN algorithm reaches the end of the disk in the direction of movement, so we add the boundary if not already present
-        if (dirUp) {
-            if (!right.contains(diskSize - 1)) right.add(diskSize - 1);
-        } else {
-            if (!left.contains(0)) left.add(0);
-        }
-
-        Collections.sort(left);
-        Collections.sort(right);
-       
-        sequence.add(initialHead);
-
-        if (dirUp) {
-            // Code used to move up towards max
-            for (int r : right) sequence.add(r);
-            // Reverse and move down towards 0
-            for (int i = left.size() - 1; i >= 0; i--) sequence.add(left.get(i));
-        } else {
-            // Code used to move down towards 0
-            for (int i = left.size() - 1; i >= 0; i--) sequence.add(left.get(i));
-            // Reverse and move up towards max
-            for (int r : right) sequence.add(r);
-        }
-
-        // This is to code clean up any immediate duplicates if the head started on a boundary
-        List<Integer> cleanSequence = new ArrayList<>();
-        cleanSequence.add(sequence.get(0));
-        for (int i = 1; i < sequence.size(); i++) {
-            if (!sequence.get(i).equals(sequence.get(i - 1))) {
-                cleanSequence.add(sequence.get(i));
+        for (int i = 0; i < requests.size(); i++) {
+            int req = requests.get(i);
+            if (req < head) {
+                left.add(req);
+            }
+            if (req > head) {
+                right.add(req);
             }
         }
 
-        updateUI(cleanSequence, requests.size(), diskSize);
+        // Sorting left and right vectors
+        Collections.sort(left);
+        Collections.sort(right);
+
+        // Run the while loop two times, one by one scanning right and left of the head
+        int run = 2;
+        while (run-- > 0) {
+            if (direction.equals("left")) {
+                for (int i = left.size() - 1; i >= 0; i--) {
+                    cur_track = left.get(i);
+
+                    // Appending current track to seek sequence
+                    seek_sequence.add(cur_track);
+
+                    // Calculate absolute distance
+                    distance = Math.abs(cur_track - head);
+
+                    // Increase the total count
+                    seek_count += distance;
+
+                    // Accessed track is now the new head
+                    head = cur_track;
+                }
+                direction = "right";
+            } else if (direction.equals("right")) {
+                for (int i = 0; i < right.size(); i++) {
+                    cur_track = right.get(i);
+
+                    // Appending current track to seek sequence
+                    seek_sequence.add(cur_track);
+
+                    // Calculate absolute distance
+                    distance = Math.abs(cur_track - head);
+
+                    // Increase the total count
+                    seek_count += distance;
+
+                    // Accessed track is now new head
+                    head = cur_track;
+                }
+                direction = "left";
+            }
+        }
+
+        updateUI(seek_sequence, seek_count, requests.size(), diskSize);
     }
 
-    private void updateUI(List<Integer> sequence, int originalReqCount, int diskSize) {
+    private void updateUI(List<Integer> sequence, int totalMovement, int originalReqCount, int diskSize) {
         StringBuilder seqStr = new StringBuilder("Service Order: ");
         StringBuilder details = new StringBuilder(String.format("%-10s | %-15s | %-15s | %-15s\n", "Step", "Start", "End", "Movement"));
         details.append("-".repeat(65)).append("\n");
 
-        int totalMovement = 0;
         for (int i = 0; i < sequence.size(); i++) {
             seqStr.append(sequence.get(i));
             if (i < sequence.size() - 1) seqStr.append("  →  ");
@@ -355,7 +383,6 @@ public class Scan extends JFrame {
                 int start = sequence.get(i - 1);
                 int end = sequence.get(i);
                 int move = Math.abs(start - end);
-                totalMovement += move;
                 details.append(String.format("Step %-5d | %-15d | %-15d | %-15d\n", i, start, end, move));
             }
         }
@@ -363,11 +390,9 @@ public class Scan extends JFrame {
         sequenceArea.setText(seqStr.toString());
         movementDetailsArea.setText(details.toString());
         
-        // --- CHANGED TO 'ms' ---
         totalMovementLabel.setText("Total Head Movement: " + totalMovement + " ms");
         double avg = originalReqCount == 0 ? 0 : (double) totalMovement / originalReqCount;
         avgSeekLabel.setText(String.format("Average Seek Distance: %.2f ms/request", avg));
-        // -----------------------
 
         graphPanel.setGraphData(sequence, diskSize);
         tabbedPane.setSelectedIndex(1);
@@ -439,8 +464,6 @@ public class Scan extends JFrame {
             g2.drawString("0", PADDING_LEFT - 5, height - PADDING_BOTTOM + 20);
             g2.drawString(String.valueOf(diskSize - 1), width - PADDING_RIGHT - 15, height - PADDING_BOTTOM + 20);
             
-            // Note: Leaving 'Cylinders' on the X-axis label as 'ms' generally refers to time cost of moving across cylinders,
-            // while the X-axis still represents the actual cylinder locations.
             g2.drawString("Cylinders", width / 2 - 25, height - PADDING_BOTTOM + 35);
             g2.drawString("Step", PADDING_LEFT - 35, PADDING_TOP - 5);
 
