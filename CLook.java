@@ -503,10 +503,6 @@ public class CLook extends JFrame {
         Integer diskSize = parseInteger(diskSizeField.getText().trim());
         Integer initialHead = parseInteger(headField.getText().trim());
         RequestParse parsed = parseRequests(requestsField.getText().trim());
-        if (diskSize == null || initialHead == null
-                || parsed.error != null || parsed.values.isEmpty()) {
-            return;
-        }
         
         // Separate requests based on the initial head position
         int head = initialHead;
