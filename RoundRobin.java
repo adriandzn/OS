@@ -38,6 +38,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.KeyStroke;
 import javax.swing.table.DefaultTableModel;
 
+//Main Window 
 public class RoundRobin extends JFrame {
     private final JFrame mainMenu;
 
@@ -46,6 +47,7 @@ public class RoundRobin extends JFrame {
     private static final int BASE_PIXELS_PER_TIME_UNIT = 35;
     private static final int MAX_TIME_VALUE = 10000;
 
+    //Track whether the current input is from the sample-data button
     private JSpinner processCountSpinner;
     private boolean sampleDataLoaded = false;
     private JSpinner quantumSpinner;
@@ -64,6 +66,7 @@ public class RoundRobin extends JFrame {
     private final Map<Component, Font> originalFonts =
             new IdentityHashMap<Component, Font>();
 
+    //Stores the input values and calculated times for one process. 
     private static class Process {
         String id;
         int arrivalTime;
@@ -87,6 +90,7 @@ public class RoundRobin extends JFrame {
         }
     }
 
+    //Represents one continous block in the Gantt Chart
     private static class Segment {
         String processID;
         int startTime;
@@ -102,7 +106,8 @@ public class RoundRobin extends JFrame {
     public RoundRobin() {
         this(null);
     }
-
+    
+    //Creates the window, input, and output panels. 
     public RoundRobin(JFrame mainMenu) {
         this.mainMenu = mainMenu;
         setTitle("CPU Scheduling - Round Robin");
@@ -124,6 +129,7 @@ public class RoundRobin extends JFrame {
         setupZoomShortcuts();
     }
 
+    //Creates the back and Exit Buttons for each page
     private JPanel createNavigationPanel() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(new Color(245, 240, 250));
@@ -145,6 +151,7 @@ public class RoundRobin extends JFrame {
         return panel;
     }
 
+    //Creates the title area
     private JPanel createHeader() {
         JPanel header = new JPanel(new BorderLayout());
         header.setBackground(PRIMARY_RED);
@@ -251,6 +258,7 @@ public class RoundRobin extends JFrame {
         return panel;
     }
 
+    //Builds the result table, Gantt Chart, and ready-queue log tabs. 
     private JTabbedPane createOutputTabs() {
         JTabbedPane tabs = new JTabbedPane();
 
@@ -318,7 +326,7 @@ public class RoundRobin extends JFrame {
             inputTable.getCellEditor().stopCellEditing();
         }
 
-        // Normal/manual input requires at least 10 processes.
+        // Manual input requires at least 10 processes.
         sampleDataLoaded = false;
         processCountSpinner.setModel(
                 new SpinnerNumberModel(10, 10, 20, 1));
@@ -347,6 +355,7 @@ public class RoundRobin extends JFrame {
         clearOutputs();
     }
 
+    //Restores the normal 10 process input
     private void resetApplication() {
         sampleDataLoaded = false;
         processCountSpinner.setModel(
@@ -355,7 +364,8 @@ public class RoundRobin extends JFrame {
         generateInputRows();
         clearOutputs();
     }
-
+    
+    //Clears all calculated results
     private void clearOutputs() {
         resultModel.setRowCount(0);
         totalLabel.setText("TOTAL Completion Time (CT): -     "
@@ -370,12 +380,14 @@ public class RoundRobin extends JFrame {
         ganttPanel.setSegments(new ArrayList<Segment>(), 0);
     }
 
+    //Checks the inputs and runs the scheduling algorithm. 
     private void calculateScheduling() {
         if (inputTable.isEditing()) {
             inputTable.getCellEditor().stopCellEditing();
         }
 
         int count = inputModel.getRowCount();
+        //Applies the minimum depending on whether it is for sample data or Manual Input
         int minimumProcessCount = sampleDataLoaded ? 5 : 10;
         if (count < minimumProcessCount || count > 20) {
             JOptionPane.showMessageDialog(this,
@@ -673,6 +685,7 @@ public class RoundRobin extends JFrame {
         }
     }
 
+    //Zoom controls
     private void zoomIn() {
         if (zoomLevel < 2.0) {
             zoomLevel = Math.min(2.0, zoomLevel + 0.1);
@@ -857,7 +870,7 @@ public class RoundRobin extends JFrame {
             g2.dispose();
         }
     }
-
+    //Starts the Swing Application
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             RoundRobin app = new RoundRobin();
