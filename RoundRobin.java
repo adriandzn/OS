@@ -47,6 +47,7 @@ public class RoundRobin extends JFrame {
     private static final int MAX_TIME_VALUE = 10000;
 
     private JSpinner processCountSpinner;
+    private boolean sampleDataLoaded = false;
     private JSpinner quantumSpinner;
     private JTable inputTable;
     private DefaultTableModel inputModel;
@@ -316,6 +317,12 @@ public class RoundRobin extends JFrame {
         if (inputTable != null && inputTable.isEditing()) {
             inputTable.getCellEditor().stopCellEditing();
         }
+
+        // Normal/manual input requires at least 10 processes.
+        sampleDataLoaded = false;
+        processCountSpinner.setModel(
+                new SpinnerNumberModel(10, 10, 20, 1));
+
         inputModel.setRowCount(0);
         int count = (Integer) processCountSpinner.getValue();
         for (int i = 1; i <= count; i++) {
@@ -324,27 +331,26 @@ public class RoundRobin extends JFrame {
     }
 
     private void loadSampleData() {
-        // Loads 10 sample processes. The first four use the practice values
-        // previously provided; P5-P10 are editable sample entries so that
-        // the module always demonstrates at least 10 processes.
-        processCountSpinner.setValue(10);
+        // Sample data is allowed to contain only 5 processes.
+        sampleDataLoaded = true;
+        processCountSpinner.setModel(
+                new SpinnerNumberModel(5, 5, 20, 1));
         quantumSpinner.setValue(2);
+
         inputModel.setRowCount(0);
-        inputModel.addRow(new Object[]{"P1", 0, 12});
-        inputModel.addRow(new Object[]{"P2", 2, 4});
-        inputModel.addRow(new Object[]{"P3", 3, 6});
-        inputModel.addRow(new Object[]{"P4", 8, 5});
-        inputModel.addRow(new Object[]{"P5", 10, 7});
-        inputModel.addRow(new Object[]{"P6", 12, 3});
-        inputModel.addRow(new Object[]{"P7", 14, 8});
-        inputModel.addRow(new Object[]{"P8", 16, 4});
-        inputModel.addRow(new Object[]{"P9", 18, 6});
-        inputModel.addRow(new Object[]{"P10", 20, 5});
+        inputModel.addRow(new Object[]{"P1", 0, 5});
+        inputModel.addRow(new Object[]{"P2", 1, 3});
+        inputModel.addRow(new Object[]{"P3", 2, 1});
+        inputModel.addRow(new Object[]{"P4", 3, 2});
+        inputModel.addRow(new Object[]{"P5", 4, 3});
+
         clearOutputs();
     }
 
     private void resetApplication() {
-        processCountSpinner.setValue(10);
+        sampleDataLoaded = false;
+        processCountSpinner.setModel(
+                new SpinnerNumberModel(10, 10, 20, 1));
         quantumSpinner.setValue(2);
         generateInputRows();
         clearOutputs();
@@ -370,9 +376,11 @@ public class RoundRobin extends JFrame {
         }
 
         int count = inputModel.getRowCount();
-        if (count < 10 || count > 20) {
+        int minimumProcessCount = sampleDataLoaded ? 5 : 10;
+        if (count < minimumProcessCount || count > 20) {
             JOptionPane.showMessageDialog(this,
-                    "Please enter between 10 and 20 processes. At least 10 processes are required.",
+                    "Please enter between " + minimumProcessCount
+                    + " and 20 processes.",
                     "Invalid Process Count", JOptionPane.ERROR_MESSAGE);
             return;
         }
