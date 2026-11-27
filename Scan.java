@@ -70,7 +70,7 @@ public class Scan extends JFrame {
         gbc.anchor = GridBagConstraints.NORTHWEST;
         inputPanel.add(new JLabel("Request Queue (comma/space separated):"), gbc);
 
-        reqQueueField = new PlaceholderTextArea("Enter disk requests (minimum 20, maximum 100)...", 3, 35);
+        reqQueueField = new PlaceholderTextArea("Enter disk requests (up to 100 requests)...", 3, 35);
         reqQueueField.setLineWrap(true);
         reqQueueField.setWrapStyleWord(true);
         reqQueueField.setFont(MAIN_FONT);
@@ -251,7 +251,7 @@ public class Scan extends JFrame {
             String queueText = reqQueueField.getText().trim();
             if (queueText.isEmpty()) {
                 JOptionPane.showMessageDialog(this,
-                    "Please enter between 20 and 100 disk requests.",
+                    "Please enter at least 1 disk request (maximum 100).",
                     "Input Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
@@ -271,9 +271,9 @@ public class Scan extends JFrame {
                 }
             }
 
-            if (requests.size() < 20 || requests.size() > 100) {
+            if (requests.size() > 100) {
                 JOptionPane.showMessageDialog(this,
-                    "Please enter between 20 and 100 requests. You entered " + requests.size() + ".",
+                    "Maximum 100 requests allowed. You entered " + requests.size() + ".",
                     "Input Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
