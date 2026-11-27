@@ -206,12 +206,17 @@ public class Scan extends JFrame {
         panel.setBorder(new EmptyBorder(7, 12, 7, 12));
         JButton backButton = new JButton("Go Back to Main Menu");
         JButton exitButton = new JButton("Exit");
+
         backButton.addActionListener(e -> {
             this.dispose();
             if (mainMenu != null) {
                 mainMenu.setVisible(true);
+            } else {
+                // Change "MainMenu" below to the exact class name of your main menu file
+                new MainMenu().setVisible(true);
             }
         });
+
         exitButton.addActionListener(e -> System.exit(0));
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         actions.setOpaque(false);
