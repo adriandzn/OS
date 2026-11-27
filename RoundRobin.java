@@ -326,13 +326,16 @@ public class RoundRobin extends JFrame {
             inputTable.getCellEditor().stopCellEditing();
         }
 
-        // Manual input requires at least 10 processes.
+        // Keep the number selected by the user before updating the spinner model.
+        int count = ((Number) processCountSpinner.getValue()).intValue();
+
+        // Manual input allows 1 to 20 processes.
         sampleDataLoaded = false;
         processCountSpinner.setModel(
-                new SpinnerNumberModel(10, 1, 20, 1));
+                new SpinnerNumberModel(count, 1, 20, 1));
 
+        // Generate the requested number of process rows.
         inputModel.setRowCount(0);
-        int count = (Integer) processCountSpinner.getValue();
         for (int i = 1; i <= count; i++) {
             inputModel.addRow(new Object[]{"P" + i, 0, 1});
         }
