@@ -46,7 +46,7 @@ public class Scan extends JFrame {
             e.printStackTrace();
         }
 
-        setTitle("SCAN Disk Scheduling Simulator - Blue-Green Theme");
+        setTitle("SCAN Disk Scheduling Simulator");
         setSize(950, 750);
         setDefaultCloseOperation(mainMenu == null ? JFrame.EXIT_ON_CLOSE : JFrame.DISPOSE_ON_CLOSE);
         setLocationRelativeTo(null);
