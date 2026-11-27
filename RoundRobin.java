@@ -187,13 +187,13 @@ public class RoundRobin extends JFrame {
         panel.setBackground(Color.WHITE);
         panel.setBorder(BorderFactory.createTitledBorder(
                 BorderFactory.createLineBorder(new Color(215, 190, 193)),
-                "PROCESS INPUT (10-20 PROCESSES)"));
+                "PROCESS INPUT (1-20 PROCESSES)"));
 
         JPanel controls = new JPanel();
         controls.setBackground(Color.WHITE);
         controls.add(new JLabel("Number of Processes:"));
 
-        processCountSpinner = new JSpinner(new SpinnerNumberModel(10, 10, 20, 1));
+        processCountSpinner = new JSpinner(new SpinnerNumberModel(10, 1, 20, 1));
         processCountSpinner.setPreferredSize(new Dimension(65, 27));
         controls.add(processCountSpinner);
 
@@ -329,7 +329,7 @@ public class RoundRobin extends JFrame {
         // Manual input requires at least 10 processes.
         sampleDataLoaded = false;
         processCountSpinner.setModel(
-                new SpinnerNumberModel(10, 10, 20, 1));
+                new SpinnerNumberModel(10, 1, 20, 1));
 
         inputModel.setRowCount(0);
         int count = (Integer) processCountSpinner.getValue();
@@ -359,7 +359,7 @@ public class RoundRobin extends JFrame {
     private void resetApplication() {
         sampleDataLoaded = false;
         processCountSpinner.setModel(
-                new SpinnerNumberModel(10, 10, 20, 1));
+                new SpinnerNumberModel(10, 1, 20, 1));
         quantumSpinner.setValue(2);
         generateInputRows();
         clearOutputs();
@@ -388,7 +388,7 @@ public class RoundRobin extends JFrame {
 
         int count = inputModel.getRowCount();
         //Applies the minimum depending on whether it is for sample data or Manual Input
-        int minimumProcessCount = sampleDataLoaded ? 5 : 10;
+        int minimumProcessCount = sampleDataLoaded ? 5 : 1;
         if (count < minimumProcessCount || count > 20) {
             JOptionPane.showMessageDialog(this,
                     "Please enter between " + minimumProcessCount
