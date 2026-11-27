@@ -280,7 +280,8 @@ public class RoundRobin extends JFrame {
                 + "TOTAL Turnaround Time (TAT): -     "
                 + "TOTAL Waiting Time (WT): -");
 
-        averageLabel = new JLabel("AVERAGE Turnaround Time (TAT): -     "
+        averageLabel = new JLabel("AVERAGE Completion Time (CT): -     "
+                + "AVERAGE Turnaround Time (TAT): -     "
                 + "AVERAGE Waiting Time (WT): -     "
                 + "AVERAGE Response Time (RT): -");
 
@@ -374,7 +375,8 @@ public class RoundRobin extends JFrame {
         totalLabel.setText("TOTAL Completion Time (CT): -     "
                 + "TOTAL Turnaround Time (TAT): -     "
                 + "TOTAL Waiting Time (WT): -");
-        averageLabel.setText("AVERAGE Turnaround Time (TAT): -     "
+        averageLabel.setText("AVERAGE Completion Time (CT): -     "
+                + "AVERAGE Turnaround Time (TAT): -     "
                 + "AVERAGE Waiting Time (WT): -     "
                 + "AVERAGE Response Time (RT): -");
         utilizationLabel.setText("CPU UTILIZATION: -");
@@ -658,11 +660,12 @@ public class RoundRobin extends JFrame {
                 totalCT, totalTAT, totalWT));
 
         averageLabel.setText(String.format(
-                "AVERAGE Turnaround Time (TAT): %.2f ms     "
+                "AVERAGE Completion Time (CT): %.2f ms     "
+                + "AVERAGE Turnaround Time (TAT): %.2f ms     "
                 + "AVERAGE Waiting Time (WT): %.2f ms     "
                 + "AVERAGE Response Time (RT): %.2f ms",
-                (double) totalTAT / n, (double) totalWT / n,
-                (double) totalRT / n));
+                (double) totalCT / n, (double) totalTAT / n,
+                (double) totalWT / n, (double) totalRT / n));
 
         double cpuUtilization = finalTime > 0
                 ? (double) totalBusyTime / finalTime * 100.0 : 0.0;
