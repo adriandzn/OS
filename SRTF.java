@@ -1,5 +1,3 @@
-
-
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -36,9 +34,7 @@ import javax.swing.table.DefaultTableModel;
 public class SRTF extends JFrame {
     private final JFrame mainMenu;
 
-    // ================================================================
     // 1. VARIABLES USED BY THE PROGRAM
-    // ================================================================
 
     // Colors used in the interface
 
@@ -66,9 +62,7 @@ public class SRTF extends JFrame {
     private JTextArea queueArea;
     private GanttPanel ganttPanel;
 
-    // ================================================================
     // 2. PROCESS AND GANTT CHART DATA
-    // ================================================================
 
     // Stores the input and calculated values for one process
 
@@ -106,9 +100,7 @@ public class SRTF extends JFrame {
         }
     }
 
-    // ================================================================
     // 3. WINDOW SETUP
-    // ================================================================
 
     public SRTF() {
         this(null);
@@ -135,9 +127,7 @@ public class SRTF extends JFrame {
         generateInputRows();
     }
 
-    // ================================================================
     // 4. UI SECTION - NAVIGATION, HEADER AND MAIN LAYOUT
-    // ================================================================
 
     // Creates the Go Back to Main Menu and Exit buttons
     private JPanel createNavigationPanel() {
@@ -342,9 +332,7 @@ public class SRTF extends JFrame {
         return tabs;
     }
 
-    // ================================================================
     // 5. INPUT BUTTON FUNCTIONS
-    // ================================================================
 
     // Creates the blank rows based on the selected process count
     private void generateInputRows() {
@@ -415,9 +403,7 @@ public class SRTF extends JFrame {
         ganttPanel.setSegments(new ArrayList<Segment>());
     }
 
-    // ================================================================
     // 6. CHECK INPUT AND START THE SRTF CALCULATION
-    // ================================================================
 
     private void calculateScheduling() {
         if (inputTable.isEditing()) {
@@ -494,9 +480,7 @@ public class SRTF extends JFrame {
         queueArea.setCaretPosition(0);
     }
 
-    // ================================================================
     // 7. SRTF ALGORITHM
-    // ================================================================
 
     // At every time unit, choose the arrived process with the shortest
     // remaining burst time. This is preemptive, so the choice is checked again.
@@ -576,9 +560,7 @@ public class SRTF extends JFrame {
         }
     }
 
-    // ================================================================
     // 8. GANTT CHART DATA
-    // ================================================================
 
     // Combines consecutive time units of the same process into one block
     private void addSegment(List<Segment> gantt, String processID,
@@ -595,9 +577,7 @@ public class SRTF extends JFrame {
         gantt.add(new Segment(processID, start, end));
     }
 
-    // ================================================================
     // 9. DISPLAY RESULTS AND CALCULATE TOTALS / AVERAGES
-    // ================================================================
 
     private void displayResults(List<Process> processes) {
         resultModel.setRowCount(0);
@@ -661,9 +641,7 @@ public class SRTF extends JFrame {
                 (double) totalRT / n, cpuUtilization, throughput));
     }
 
-    // ================================================================
-    // 11. GANTT CHART UI - DRAWING THE CHART
-    // ================================================================
+    // 10. GANTT CHART UI - DRAWING THE CHART
 
     private static class GanttPanel extends JPanel {
         private List<Segment> segments = new ArrayList<Segment>();
@@ -755,9 +733,7 @@ public class SRTF extends JFrame {
         }
     }
 
-    // ================================================================
-    // 12. MAIN METHOD - START THE APPLICATION
-    // ================================================================
+    // 11. MAIN METHOD - START THE APPLICATION
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
