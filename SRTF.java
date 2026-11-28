@@ -313,7 +313,7 @@ public class SRTF extends JFrame {
                 + "AVERAGE Waiting Time (WT): -");
         averageLabel.setFont(new Font("Arial", Font.BOLD, 13));
 
-        performanceLabel = new JLabel("CPU Utilization: -     Throughput: -");
+        performanceLabel = new JLabel("AVERAGE Response Time (RT): -     CPU Utilization: -     Throughput: -");
         performanceLabel.setFont(new Font("Arial", Font.BOLD, 13));
 
         JPanel summaryPanel = new JPanel(new GridLayout(3, 1, 0, 8));
@@ -395,7 +395,7 @@ public class SRTF extends JFrame {
                 + "AVERAGE Turnaround Time (TAT): -     "
                 + "AVERAGE Waiting Time (WT): -");
 
-        performanceLabel.setText("CPU Utilization: -     Throughput: -");
+        performanceLabel.setText("AVERAGE Response Time (RT): -     CPU Utilization: -     Throughput: -");
         queueArea.setText("");
         ganttPanel.setSegments(new ArrayList<Segment>());
     }
@@ -410,7 +410,7 @@ public class SRTF extends JFrame {
         averageLabel.setText("AVERAGE Completion Time (CT): -     "
                 + "AVERAGE Turnaround Time (TAT): -     "
                 + "AVERAGE Waiting Time (WT): -");
-        performanceLabel.setText("CPU Utilization: -     Throughput: -");
+        performanceLabel.setText("AVERAGE Response Time (RT): -     CPU Utilization: -     Throughput: -");
         queueArea.setText("");
         ganttPanel.setSegments(new ArrayList<Segment>());
     }
