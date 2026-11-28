@@ -1,5 +1,3 @@
-
-
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -9,17 +7,11 @@ import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.GridLayout;
 import java.awt.Component;
-import java.awt.Container;
-import java.awt.event.InputEvent;
-import java.awt.event.KeyEvent;
-import java.util.IdentityHashMap;
-import java.util.Map;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -27,6 +19,7 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSplitPane;
 import javax.swing.JSpinner;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
@@ -36,15 +29,12 @@ import javax.swing.DefaultCellEditor;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
-import javax.swing.KeyStroke;
 import javax.swing.table.DefaultTableModel;
 
 public class SRTF extends JFrame {
     private final JFrame mainMenu;
 
-    // ================================================================
     // 1. VARIABLES USED BY THE PROGRAM
-    // ================================================================
 
     // Colors used in the interface
 
@@ -67,17 +57,12 @@ public class SRTF extends JFrame {
     private JLabel averageLabel;
     private JLabel performanceLabel;
 
-    // Other interface variables: zoom, queue, and Gantt Chart
+    // Other interface variables: queue and Gantt Chart
 
-    private double zoomLevel = 1.0;
-    private final Map<Component, Font> originalFonts =
-            new IdentityHashMap<Component, Font>();
     private JTextArea queueArea;
     private GanttPanel ganttPanel;
 
-    // ================================================================
     // 2. PROCESS AND GANTT CHART DATA
-    // ================================================================
 
     // Stores the input and calculated values for one process
 
@@ -115,9 +100,7 @@ public class SRTF extends JFrame {
         }
     }
 
-    // ================================================================
     // 3. WINDOW SETUP
-    // ================================================================
 
     public SRTF() {
         this(null);
@@ -127,8 +110,8 @@ public class SRTF extends JFrame {
         this.mainMenu = mainMenu;
         setTitle("CPU Scheduling - Shortest Remaining Time First");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(1100, 750);
-        setMinimumSize(new Dimension(850, 600));
+        setSize(1150, 820);
+        setMinimumSize(new Dimension(900, 650));
         setLocationRelativeTo(null);
 
         setLayout(new BorderLayout(10, 10));
@@ -142,13 +125,9 @@ public class SRTF extends JFrame {
         add(createMainContent(), BorderLayout.CENTER);
 
         generateInputRows();
-        captureOriginalFonts(getContentPane());
-        setupZoomShortcuts();
     }
 
-    // ================================================================
     // 4. UI SECTION - NAVIGATION, HEADER AND MAIN LAYOUT
-    // ================================================================
 
     // Creates the Go Back to Main Menu and Exit buttons
     private JPanel createNavigationPanel() {
@@ -205,8 +184,17 @@ public class SRTF extends JFrame {
         main.setBackground(Color.WHITE);
         main.setBorder(BorderFactory.createEmptyBorder(12, 15, 15, 15));
 
-        main.add(createInputPanel(), BorderLayout.NORTH);
-        main.add(createOutputTabs(), BorderLayout.CENTER);
+        JSplitPane contentSplit = new JSplitPane(
+                JSplitPane.VERTICAL_SPLIT,
+                createInputPanel(),
+                createOutputTabs());
+        contentSplit.setContinuousLayout(true);
+        contentSplit.setResizeWeight(0.43);
+        contentSplit.setDividerSize(8);
+        contentSplit.setBorder(null);
+        contentSplit.setDividerLocation(0.43);
+
+        main.add(contentSplit, BorderLayout.CENTER);
         return main;
     }
 
@@ -224,7 +212,7 @@ public class SRTF extends JFrame {
 
         controls.add(new JLabel("Number of Processes:"));
 
-        processCountSpinner = new JSpinner(new SpinnerNumberModel(7, 1, 20, 1));
+        processCountSpinner = new JSpinner(new SpinnerNumberModel(10, 1, 20, 1));
         processCountSpinner.setPreferredSize(new Dimension(65, 27));
         controls.add(processCountSpinner);
 
@@ -277,7 +265,7 @@ public class SRTF extends JFrame {
         inputTable.getColumnModel().getColumn(2).setCellEditor(numberEditor);
 
         JScrollPane inputScroll = new JScrollPane(inputTable);
-        inputScroll.setPreferredSize(new Dimension(700, 285));
+        inputScroll.setPreferredSize(new Dimension(700, 180));
         panel.add(inputScroll, BorderLayout.CENTER);
 
         return panel;
@@ -313,7 +301,7 @@ public class SRTF extends JFrame {
                 + "AVERAGE Waiting Time (WT): -");
         averageLabel.setFont(new Font("Arial", Font.BOLD, 13));
 
-        performanceLabel = new JLabel("CPU Utilization: -     Throughput: -");
+        performanceLabel = new JLabel("AVERAGE Response Time (RT): -     CPU Utilization: -     Throughput: -");
         performanceLabel.setFont(new Font("Arial", Font.BOLD, 13));
 
         JPanel summaryPanel = new JPanel(new GridLayout(3, 1, 0, 8));
@@ -344,9 +332,7 @@ public class SRTF extends JFrame {
         return tabs;
     }
 
-    // ================================================================
     // 5. INPUT BUTTON FUNCTIONS
-    // ================================================================
 
     // Creates the blank rows based on the selected process count
     private void generateInputRows() {
@@ -395,13 +381,15 @@ public class SRTF extends JFrame {
                 + "AVERAGE Turnaround Time (TAT): -     "
                 + "AVERAGE Waiting Time (WT): -");
 
-        performanceLabel.setText("CPU Utilization: -     Throughput: -");
+        performanceLabel.setText("AVERAGE Response Time (RT): -     CPU Utilization: -     Throughput: -");
         queueArea.setText("");
         ganttPanel.setSegments(new ArrayList<Segment>());
     }
 
     // Clears the previous results and returns the input table to its defaults
     private void resetApplication() {
+        // Restore the default of 10 processes, matching the Round Robin module.
+        processCountSpinner.setModel(new SpinnerNumberModel(10, 1, 20, 1));
         generateInputRows();
         resultModel.setRowCount(0);
         totalLabel.setText("TOTAL Completion Time (CT): -     "
@@ -410,14 +398,12 @@ public class SRTF extends JFrame {
         averageLabel.setText("AVERAGE Completion Time (CT): -     "
                 + "AVERAGE Turnaround Time (TAT): -     "
                 + "AVERAGE Waiting Time (WT): -");
-        performanceLabel.setText("CPU Utilization: -     Throughput: -");
+        performanceLabel.setText("AVERAGE Response Time (RT): -     CPU Utilization: -     Throughput: -");
         queueArea.setText("");
         ganttPanel.setSegments(new ArrayList<Segment>());
     }
 
-    // ================================================================
     // 6. CHECK INPUT AND START THE SRTF CALCULATION
-    // ================================================================
 
     private void calculateScheduling() {
         if (inputTable.isEditing()) {
@@ -494,9 +480,7 @@ public class SRTF extends JFrame {
         queueArea.setCaretPosition(0);
     }
 
-    // ================================================================
     // 7. SRTF ALGORITHM
-    // ================================================================
 
     // At every time unit, choose the arrived process with the shortest
     // remaining burst time. This is preemptive, so the choice is checked again.
@@ -576,9 +560,7 @@ public class SRTF extends JFrame {
         }
     }
 
-    // ================================================================
     // 8. GANTT CHART DATA
-    // ================================================================
 
     // Combines consecutive time units of the same process into one block
     private void addSegment(List<Segment> gantt, String processID,
@@ -595,9 +577,7 @@ public class SRTF extends JFrame {
         gantt.add(new Segment(processID, start, end));
     }
 
-    // ================================================================
     // 9. DISPLAY RESULTS AND CALCULATE TOTALS / AVERAGES
-    // ================================================================
 
     private void displayResults(List<Process> processes) {
         resultModel.setRowCount(0);
@@ -661,111 +641,10 @@ public class SRTF extends JFrame {
                 (double) totalRT / n, cpuUtilization, throughput));
     }
 
-    // ================================================================
-    // 10. ZOOM FUNCTIONS AND KEYBOARD SHORTCUTS
-    // ================================================================
-
-    // Saves the original font sizes so the zoom can be reset later
-    private void captureOriginalFonts(Container container) {
-        for (Component component : container.getComponents()) {
-            if (component.getFont() != null) {
-                originalFonts.put(component, component.getFont());
-            }
-            if (component instanceof Container) {
-                captureOriginalFonts((Container) component);
-            }
-        }
-    }
-
-    private void zoomIn() {
-        if (zoomLevel < 2.0) {
-            zoomLevel = Math.min(2.0, zoomLevel + 0.1);
-            applyZoom();
-        }
-    }
-
-    private void zoomOut() {
-        if (zoomLevel > 0.7) {
-            zoomLevel = Math.max(0.7, zoomLevel - 0.1);
-            applyZoom();
-        }
-    }
-
-    private void resetZoom() {
-        zoomLevel = 1.0;
-        applyZoom();
-    }
-
-    private void applyZoom() {
-        for (Map.Entry<Component, Font> entry : originalFonts.entrySet()) {
-            Component component = entry.getKey();
-            Font original = entry.getValue();
-            component.setFont(original.deriveFont(
-                    Math.max(8.0f, (float) (original.getSize2D() * zoomLevel))));
-        }
-
-        if (inputTable != null) {
-            inputTable.setRowHeight(Math.max(18, (int) Math.round(25 * zoomLevel)));
-        }
-        if (resultTable != null) {
-            resultTable.setRowHeight(Math.max(18, (int) Math.round(25 * zoomLevel)));
-        }
-        if (ganttPanel != null) {
-            ganttPanel.setZoomScale(zoomLevel);
-        }
-        revalidate();
-        repaint();
-    }
-
-    // Sets the keyboard shortcuts for zooming in, out, and resetting
-    private void setupZoomShortcuts() {
-        javax.swing.JRootPane root = getRootPane();
-        int condition = javax.swing.JComponent.WHEN_IN_FOCUSED_WINDOW;
-
-        root.getInputMap(condition).put(
-                KeyStroke.getKeyStroke(KeyEvent.VK_EQUALS, InputEvent.CTRL_DOWN_MASK),
-                "zoomIn");
-        root.getInputMap(condition).put(
-                KeyStroke.getKeyStroke(KeyEvent.VK_EQUALS,
-                        InputEvent.CTRL_DOWN_MASK | InputEvent.SHIFT_DOWN_MASK),
-                "zoomIn");
-        root.getInputMap(condition).put(
-                KeyStroke.getKeyStroke(KeyEvent.VK_ADD, InputEvent.CTRL_DOWN_MASK),
-                "zoomIn");
-        root.getInputMap(condition).put(
-                KeyStroke.getKeyStroke(KeyEvent.VK_MINUS, InputEvent.CTRL_DOWN_MASK),
-                "zoomOut");
-        root.getInputMap(condition).put(
-                KeyStroke.getKeyStroke(KeyEvent.VK_0, InputEvent.CTRL_DOWN_MASK),
-                "resetZoom");
-
-        root.getActionMap().put("zoomIn", new AbstractAction() {
-            @Override
-            public void actionPerformed(java.awt.event.ActionEvent e) {
-                zoomIn();
-            }
-        });
-        root.getActionMap().put("zoomOut", new AbstractAction() {
-            @Override
-            public void actionPerformed(java.awt.event.ActionEvent e) {
-                zoomOut();
-            }
-        });
-        root.getActionMap().put("resetZoom", new AbstractAction() {
-            @Override
-            public void actionPerformed(java.awt.event.ActionEvent e) {
-                resetZoom();
-            }
-        });
-    }
-
-    // ================================================================
-    // 11. GANTT CHART UI - DRAWING THE CHART
-    // ================================================================
+    // 10. GANTT CHART UI - DRAWING THE CHART
 
     private static class GanttPanel extends JPanel {
         private List<Segment> segments = new ArrayList<Segment>();
-        private double zoomScale = 1.0;
 
         GanttPanel() {
             setBackground(Color.WHITE);
@@ -778,21 +657,13 @@ public class SRTF extends JFrame {
             repaint();
         }
 
-        void setZoomScale(double scale) {
-            zoomScale = scale;
-            revalidate();
-            repaint();
-        }
-
         @Override
         public Dimension getPreferredSize() {
             int width = 80;
             for (Segment s : segments) {
                 width += Math.max(75, (s.endTime - s.startTime) * 35);
             }
-            return new Dimension(
-                    (int) Math.round(Math.max(800, width) * zoomScale),
-                    (int) Math.round(190 * zoomScale));
+            return new Dimension(Math.max(800, width), 190);
         }
 
         @Override
@@ -800,7 +671,6 @@ public class SRTF extends JFrame {
             super.paintComponent(g);
 
             Graphics2D g2 = (Graphics2D) g.create();
-            g2.scale(zoomScale, zoomScale);
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
                     RenderingHints.VALUE_ANTIALIAS_ON);
 
@@ -863,9 +733,7 @@ public class SRTF extends JFrame {
         }
     }
 
-    // ================================================================
-    // 12. MAIN METHOD - START THE APPLICATION
-    // ================================================================
+    // 11. MAIN METHOD - START THE APPLICATION
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {

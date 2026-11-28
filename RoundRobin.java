@@ -1,25 +1,19 @@
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Component;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.GridLayout;
-import java.awt.Component;
-import java.awt.Container;
-import java.awt.event.InputEvent;
-import java.awt.event.KeyEvent;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
-import java.util.IdentityHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
-import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -27,6 +21,7 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSplitPane;
 import javax.swing.JSpinner;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
@@ -35,7 +30,6 @@ import javax.swing.JTextField;
 import javax.swing.DefaultCellEditor;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingUtilities;
-import javax.swing.KeyStroke;
 import javax.swing.table.DefaultTableModel;
 
 //Main Window 
@@ -57,14 +51,9 @@ public class RoundRobin extends JFrame {
     private DefaultTableModel resultModel;
     private JLabel totalLabel;
     private JLabel averageLabel;
-    private JLabel utilizationLabel;
-    private JLabel throughputLabel;
+    private JLabel performanceLabel;
     private JTextArea queueArea;
     private GanttPanel ganttPanel;
-
-    private double zoomLevel = 1.0;
-    private final Map<Component, Font> originalFonts =
-            new IdentityHashMap<Component, Font>();
 
     //Stores the input values and calculated times for one process. 
     private static class Process {
@@ -112,8 +101,8 @@ public class RoundRobin extends JFrame {
         this.mainMenu = mainMenu;
         setTitle("CPU Scheduling - Round Robin");
         setDefaultCloseOperation(mainMenu == null ? JFrame.EXIT_ON_CLOSE : JFrame.DISPOSE_ON_CLOSE);
-        setSize(1100, 750);
-        setMinimumSize(new Dimension(850, 600));
+        setSize(1150, 820);
+        setMinimumSize(new Dimension(900, 650));
         setLocationRelativeTo(null);
         setLayout(new BorderLayout(10, 10));
         getContentPane().setBackground(Color.WHITE);
@@ -125,8 +114,6 @@ public class RoundRobin extends JFrame {
         add(createMainContent(), BorderLayout.CENTER);
 
         generateInputRows();
-        captureOriginalFonts(getContentPane());
-        setupZoomShortcuts();
     }
 
     //Creates the back and Exit Buttons for each page
@@ -177,8 +164,17 @@ public class RoundRobin extends JFrame {
         JPanel main = new JPanel(new BorderLayout(10, 10));
         main.setBackground(Color.WHITE);
         main.setBorder(BorderFactory.createEmptyBorder(12, 15, 15, 15));
-        main.add(createInputPanel(), BorderLayout.NORTH);
-        main.add(createOutputTabs(), BorderLayout.CENTER);
+        JSplitPane contentSplit = new JSplitPane(
+                JSplitPane.VERTICAL_SPLIT,
+                createInputPanel(),
+                createOutputTabs());
+        contentSplit.setContinuousLayout(true);
+        contentSplit.setResizeWeight(0.43);
+        contentSplit.setDividerSize(8);
+        contentSplit.setBorder(null);
+        contentSplit.setDividerLocation(0.43);
+
+        main.add(contentSplit, BorderLayout.CENTER);
         return main;
     }
 
@@ -253,7 +249,7 @@ public class RoundRobin extends JFrame {
         inputTable.getColumnModel().getColumn(2).setCellEditor(numberEditor);
 
         JScrollPane inputScroll = new JScrollPane(inputTable);
-        inputScroll.setPreferredSize(new Dimension(700, 285));
+        inputScroll.setPreferredSize(new Dimension(700, 180));
         panel.add(inputScroll, BorderLayout.CENTER);
         return panel;
     }
@@ -280,25 +276,24 @@ public class RoundRobin extends JFrame {
                 + "TOTAL Turnaround Time (TAT): -     "
                 + "TOTAL Waiting Time (WT): -");
 
-        averageLabel = new JLabel("AVERAGE Turnaround Time (TAT): -     "
-                + "AVERAGE Waiting Time (WT): -     "
-                + "AVERAGE Response Time (RT): -");
+        averageLabel = new JLabel("AVERAGE Completion Time (CT): -     "
+                + "AVERAGE Turnaround Time (TAT): -     "
+                + "AVERAGE Waiting Time (WT): -");
+
+        performanceLabel = new JLabel("AVERAGE Response Time (RT): -     "
+                + "CPU Utilization: -     Throughput: -");
 
         totalLabel.setFont(new Font("Arial", Font.BOLD, 13));
         averageLabel.setFont(new Font("Arial", Font.BOLD, 13));
+        performanceLabel.setFont(new Font("Arial", Font.BOLD, 13));
 
-        utilizationLabel = new JLabel("CPU UTILIZATION: -");
-        throughputLabel = new JLabel("THROUGHPUT: -");
-        utilizationLabel.setFont(new Font("Arial", Font.BOLD, 14));
-        throughputLabel.setFont(new Font("Arial", Font.BOLD, 14));
-
-        JPanel summaryPanel = new JPanel(new GridLayout(4, 1, 0, 8));
+        // Match the SRTF summary layout: three rows below the results table.
+        JPanel summaryPanel = new JPanel(new GridLayout(3, 1, 0, 8));
         summaryPanel.setBackground(Color.WHITE);
         summaryPanel.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
         summaryPanel.add(totalLabel);
         summaryPanel.add(averageLabel);
-        summaryPanel.add(utilizationLabel);
-        summaryPanel.add(throughputLabel);
+        summaryPanel.add(performanceLabel);
 
         JPanel resultsPanel = new JPanel(new BorderLayout(5, 5));
         resultsPanel.add(new JScrollPane(resultTable), BorderLayout.CENTER);
@@ -374,11 +369,11 @@ public class RoundRobin extends JFrame {
         totalLabel.setText("TOTAL Completion Time (CT): -     "
                 + "TOTAL Turnaround Time (TAT): -     "
                 + "TOTAL Waiting Time (WT): -");
-        averageLabel.setText("AVERAGE Turnaround Time (TAT): -     "
-                + "AVERAGE Waiting Time (WT): -     "
-                + "AVERAGE Response Time (RT): -");
-        utilizationLabel.setText("CPU UTILIZATION: -");
-        throughputLabel.setText("THROUGHPUT: -");
+        averageLabel.setText("AVERAGE Completion Time (CT): -     "
+                + "AVERAGE Turnaround Time (TAT): -     "
+                + "AVERAGE Waiting Time (WT): -");
+        performanceLabel.setText("AVERAGE Response Time (RT): -     "
+                + "CPU Utilization: -     Throughput: -");
         queueArea.setText("");
         ganttPanel.setSegments(new ArrayList<Segment>(), 0);
     }
@@ -658,120 +653,25 @@ public class RoundRobin extends JFrame {
                 totalCT, totalTAT, totalWT));
 
         averageLabel.setText(String.format(
-                "AVERAGE Turnaround Time (TAT): %.2f ms     "
-                + "AVERAGE Waiting Time (WT): %.2f ms     "
-                + "AVERAGE Response Time (RT): %.2f ms",
-                (double) totalTAT / n, (double) totalWT / n,
-                (double) totalRT / n));
+                "AVERAGE Completion Time (CT): %.2f ms     "
+                + "AVERAGE Turnaround Time (TAT): %.2f ms     "
+                + "AVERAGE Waiting Time (WT): %.2f ms",
+                (double) totalCT / n, (double) totalTAT / n,
+                (double) totalWT / n));
 
         double cpuUtilization = finalTime > 0
                 ? (double) totalBusyTime / finalTime * 100.0 : 0.0;
         double throughput = finalTime > 0
                 ? (double) n / finalTime : 0.0;
 
-        utilizationLabel.setText(String.format(
-                "CPU UTILIZATION: %.2f%%  (Busy Time: %d ms / Elapsed Time: %d ms)",
-                cpuUtilization, totalBusyTime, finalTime));
-        throughputLabel.setText(String.format(
-                "THROUGHPUT: %.4f processes/ms  (%d processes / %d ms)",
-                throughput, n, finalTime));
-    }
-
-    private void captureOriginalFonts(Container container) {
-        for (Component component : container.getComponents()) {
-            if (component.getFont() != null) {
-                originalFonts.put(component, component.getFont());
-            }
-            if (component instanceof Container) {
-                captureOriginalFonts((Container) component);
-            }
-        }
-    }
-
-    //Zoom controls
-    private void zoomIn() {
-        if (zoomLevel < 2.0) {
-            zoomLevel = Math.min(2.0, zoomLevel + 0.1);
-            applyZoom();
-        }
-    }
-
-    private void zoomOut() {
-        if (zoomLevel > 0.7) {
-            zoomLevel = Math.max(0.7, zoomLevel - 0.1);
-            applyZoom();
-        }
-    }
-
-    private void resetZoom() {
-        zoomLevel = 1.0;
-        applyZoom();
-    }
-
-    private void applyZoom() {
-        for (Map.Entry<Component, Font> entry : originalFonts.entrySet()) {
-            Component component = entry.getKey();
-            Font original = entry.getValue();
-            component.setFont(original.deriveFont(
-                    Math.max(8.0f, (float) (original.getSize2D() * zoomLevel))));
-        }
-        if (inputTable != null) {
-            inputTable.setRowHeight(Math.max(18, (int) Math.round(25 * zoomLevel)));
-        }
-        if (resultTable != null) {
-            resultTable.setRowHeight(Math.max(18, (int) Math.round(25 * zoomLevel)));
-        }
-        if (ganttPanel != null) {
-            ganttPanel.setZoomScale(zoomLevel);
-        }
-        revalidate();
-        repaint();
-    }
-
-    private void setupZoomShortcuts() {
-        javax.swing.JRootPane root = getRootPane();
-        int condition = javax.swing.JComponent.WHEN_IN_FOCUSED_WINDOW;
-
-        root.getInputMap(condition).put(
-                KeyStroke.getKeyStroke(KeyEvent.VK_EQUALS, InputEvent.CTRL_DOWN_MASK),
-                "zoomIn");
-        root.getInputMap(condition).put(
-                KeyStroke.getKeyStroke(KeyEvent.VK_EQUALS,
-                        InputEvent.CTRL_DOWN_MASK | InputEvent.SHIFT_DOWN_MASK),
-                "zoomIn");
-        root.getInputMap(condition).put(
-                KeyStroke.getKeyStroke(KeyEvent.VK_ADD, InputEvent.CTRL_DOWN_MASK),
-                "zoomIn");
-        root.getInputMap(condition).put(
-                KeyStroke.getKeyStroke(KeyEvent.VK_MINUS, InputEvent.CTRL_DOWN_MASK),
-                "zoomOut");
-        root.getInputMap(condition).put(
-                KeyStroke.getKeyStroke(KeyEvent.VK_0, InputEvent.CTRL_DOWN_MASK),
-                "resetZoom");
-
-        root.getActionMap().put("zoomIn", new AbstractAction() {
-            @Override
-            public void actionPerformed(java.awt.event.ActionEvent e) {
-                zoomIn();
-            }
-        });
-        root.getActionMap().put("zoomOut", new AbstractAction() {
-            @Override
-            public void actionPerformed(java.awt.event.ActionEvent e) {
-                zoomOut();
-            }
-        });
-        root.getActionMap().put("resetZoom", new AbstractAction() {
-            @Override
-            public void actionPerformed(java.awt.event.ActionEvent e) {
-                resetZoom();
-            }
-        });
+        performanceLabel.setText(String.format(
+                "AVERAGE Response Time (RT): %.2f ms     "
+                + "CPU Utilization: %.2f%%     Throughput: %.4f processes/ms",
+                (double) totalRT / n, cpuUtilization, throughput));
     }
 
     private static class GanttPanel extends JPanel {
         private List<Segment> segments = new ArrayList<Segment>();
-        private double zoomScale = 1.0;
 
         private static final Color[] PROCESS_COLORS = {
                 new Color(248, 210, 213),
@@ -793,12 +693,6 @@ public class RoundRobin extends JFrame {
             repaint();
         }
 
-        void setZoomScale(double scale) {
-            zoomScale = scale;
-            revalidate();
-            repaint();
-        }
-
         @Override
         public Dimension getPreferredSize() {
             int width = 80;
@@ -806,9 +700,7 @@ public class RoundRobin extends JFrame {
                 width += Math.max(75,
                         (segment.endTime - segment.startTime) * 35) + 2;
             }
-            return new Dimension(
-                    (int) Math.round(Math.max(800, width) * zoomScale),
-                    (int) Math.round(190 * zoomScale));
+            return new Dimension(Math.max(800, width), 190);
         }
 
         @Override
@@ -816,7 +708,6 @@ public class RoundRobin extends JFrame {
             super.paintComponent(g);
 
             Graphics2D g2 = (Graphics2D) g.create();
-            g2.scale(zoomScale, zoomScale);
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
                     RenderingHints.VALUE_ANTIALIAS_ON);
 
