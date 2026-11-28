@@ -17,11 +17,11 @@ public class Scan extends JFrame {
     private GraphPanel graphPanel;
     private JTabbedPane tabbedPane;
 
-    // To have a Blue-Green theme constraints for the UI DESIGN
+    // Blue-Green theme constraints for the UI DESIGN
     private final Font MAIN_FONT = new Font("Segoe UI", Font.PLAIN, 14);
     private final Font BOLD_FONT = new Font("Segoe UI", Font.BOLD, 14);
 
-    // Code to implement a Teal/Mint Palette
+    // Teal/Mint Palette
     private final Color PRIMARY_COLOR = new Color(0, 150, 136);      // Teal
     private final Color PANEL_BG = new Color(242, 250, 249);         // Very light mint for panels
     private final Color GRAPH_LINE_COLOR = new Color(38, 166, 154);  // Medium Teal
@@ -54,7 +54,7 @@ public class Scan extends JFrame {
         ((JPanel) getContentPane()).setBorder(new EmptyBorder(10, 10, 10, 10));
         getContentPane().setBackground(Color.WHITE);
 
-        // Code for the Input Panel with a Blue-Green Theme
+        // Input Panel with a Blue-Green Theme
         JPanel inputPanel = new JPanel(new GridBagLayout());
         inputPanel.setBorder(BorderFactory.createTitledBorder(
                 BorderFactory.createLineBorder(PRIMARY_COLOR, 1),
@@ -105,7 +105,7 @@ public class Scan extends JFrame {
         gbc.gridx = 1;
         inputPanel.add(directionBox, gbc);
 
-        // Code for the Buttons Panel
+        // Buttons Panel
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 0));
         buttonPanel.setOpaque(false);
 
@@ -127,11 +127,11 @@ public class Scan extends JFrame {
         gbc.gridx = 0; gbc.gridy = 3; gbc.gridwidth = 4;
         inputPanel.add(buttonPanel, gbc);
 
-        // Code for the Center Panel: Results & Tabs
+        // Center Panel: Results & Tabs
         JPanel centerPanel = new JPanel(new BorderLayout(10, 10));
         centerPanel.setBackground(Color.WHITE);
 
-        // Code to have a sequence panel
+        // Sequence panel
         JPanel sequencePanel = new JPanel(new BorderLayout(5, 5));
         sequencePanel.setBackground(Color.WHITE);
         sequencePanel.setBorder(BorderFactory.createTitledBorder(
@@ -146,7 +146,7 @@ public class Scan extends JFrame {
         sequenceArea.setBackground(PANEL_BG);
         sequencePanel.add(new JScrollPane(sequenceArea), BorderLayout.CENTER);
 
-        // Code for the Statistics Panel
+        // Statistics Panel
         JPanel statsPanel = new JPanel(new GridLayout(1, 2, 10, 0));
         statsPanel.setBackground(Color.WHITE);
         statsPanel.setBorder(new EmptyBorder(10, 5, 5, 5));
@@ -162,7 +162,7 @@ public class Scan extends JFrame {
 
         centerPanel.add(sequencePanel, BorderLayout.NORTH);
 
-        // Code for the Tabs
+        // Tabs
         tabbedPane = new JTabbedPane();
         tabbedPane.setFont(MAIN_FONT);
 
@@ -208,12 +208,20 @@ public class Scan extends JFrame {
         JButton exitButton = new JButton("Exit");
 
         backButton.addActionListener(e -> {
-            this.dispose();
             if (mainMenu != null) {
+                this.dispose();
                 mainMenu.setVisible(true);
             } else {
-                // Change "MainMenu" below to the exact class name of your main menu file
-                new MainMenu().setVisible(true);
+                try {
+                    Class<?> menuClass = Class.forName("MainMenu");
+                    JFrame menuFrame = (JFrame) menuClass.getDeclaredConstructor().newInstance();
+                    this.dispose();
+                    menuFrame.setVisible(true);
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(this,
+                        "MainMenu class not found. Run from MainMenu to navigate back.",
+                        "Navigation Info", JOptionPane.INFORMATION_MESSAGE);
+                }
             }
         });
 
@@ -274,6 +282,13 @@ public class Scan extends JFrame {
                     }
                     requests.add(cylinder);
                 }
+            }
+
+            if (requests.isEmpty()) {
+                JOptionPane.showMessageDialog(this,
+                    "Please enter at least 1 disk request (maximum 100).",
+                    "Input Error", JOptionPane.ERROR_MESSAGE);
+                return;
             }
 
             if (requests.size() > 100) {
@@ -420,7 +435,7 @@ public class Scan extends JFrame {
         }
     }
 
-    // Code to achieve an enhanced graph panel
+    // Enhanced graph panel
     class GraphPanel extends JPanel {
         private List<Integer> sequence;
         private int diskSize = 200;
@@ -453,20 +468,20 @@ public class Scan extends JFrame {
                 int x = PADDING_LEFT + (i * graphWidth / gridLines);
                 g2.drawLine(x, PADDING_TOP, x, height - PADDING_BOTTOM);
             }
-            if (sequence != null && !sequence.isEmpty()) {
+            if (sequence != null && sequence.size() > 1) {
                 for (int i = 0; i < sequence.size(); i++) {
                     int y = PADDING_TOP + (i * graphHeight / (sequence.size() - 1));
                     g2.drawLine(PADDING_LEFT, y, width - PADDING_RIGHT, y);
                 }
             }
 
-            // Code to Draw Axes
+            // Draw Axes
             g2.setColor(GRAPH_NODE_COLOR);
             g2.setStroke(new BasicStroke(2f));
             g2.drawLine(PADDING_LEFT, PADDING_TOP, PADDING_LEFT, height - PADDING_BOTTOM);
             g2.drawLine(PADDING_LEFT, height - PADDING_BOTTOM, width - PADDING_RIGHT, height - PADDING_BOTTOM);
 
-            // Code for Axis Labels
+            // Axis Labels
             g2.setFont(new Font("Segoe UI", Font.BOLD, 12));
             g2.setColor(GRAPH_NODE_COLOR);
             g2.drawString("0", PADDING_LEFT - 5, height - PADDING_BOTTOM + 20);
@@ -480,8 +495,8 @@ public class Scan extends JFrame {
             int steps = sequence.size();
             List<Point> points = new ArrayList<>();
             for (int i = 0; i < steps; i++) {
-                int x = PADDING_LEFT + (int) ((double) sequence.get(i) / (diskSize - 1) * graphWidth);
-                int y = PADDING_TOP + (int) ((double) i / (steps - 1) * graphHeight);
+                int x = (diskSize <= 1) ? PADDING_LEFT : PADDING_LEFT + (int) ((double) sequence.get(i) / (diskSize - 1) * graphWidth);
+                int y = (steps <= 1) ? PADDING_TOP : PADDING_TOP + (int) ((double) i / (steps - 1) * graphHeight);
                 points.add(new Point(x, y));
             }
 
@@ -489,7 +504,6 @@ public class Scan extends JFrame {
             for (int i = 0; i < points.size(); i++) {
                 Point p = points.get(i);
 
-                // This is for the Line connecting to the previous point
                 if (i > 0) {
                     Point prev = points.get(i - 1);
                     g2.setColor(GRAPH_LINE_COLOR);
@@ -497,11 +511,9 @@ public class Scan extends JFrame {
                     g2.drawLine(prev.x, prev.y, p.x, p.y);
                 }
 
-                // This is for drawing the Data Node
                 g2.setColor(GRAPH_NODE_COLOR);
                 g2.fillOval(p.x - 6, p.y - 6, 12, 12);
 
-                // This is for drawing Cylinder Label Text above the node
                 g2.setColor(Color.DARK_GRAY);
                 g2.setFont(new Font("Segoe UI", Font.BOLD, 11));
 
