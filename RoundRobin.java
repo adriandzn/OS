@@ -57,8 +57,7 @@ public class RoundRobin extends JFrame {
     private DefaultTableModel resultModel;
     private JLabel totalLabel;
     private JLabel averageLabel;
-    private JLabel utilizationLabel;
-    private JLabel throughputLabel;
+    private JLabel performanceLabel;
     private JTextArea queueArea;
     private GanttPanel ganttPanel;
 
@@ -282,24 +281,22 @@ public class RoundRobin extends JFrame {
 
         averageLabel = new JLabel("AVERAGE Completion Time (CT): -     "
                 + "AVERAGE Turnaround Time (TAT): -     "
-                + "AVERAGE Waiting Time (WT): -     "
-                + "AVERAGE Response Time (RT): -");
+                + "AVERAGE Waiting Time (WT): -");
+
+        performanceLabel = new JLabel("AVERAGE Response Time (RT): -     "
+                + "CPU Utilization: -     Throughput: -");
 
         totalLabel.setFont(new Font("Arial", Font.BOLD, 13));
         averageLabel.setFont(new Font("Arial", Font.BOLD, 13));
+        performanceLabel.setFont(new Font("Arial", Font.BOLD, 13));
 
-        utilizationLabel = new JLabel("CPU UTILIZATION: -");
-        throughputLabel = new JLabel("THROUGHPUT: -");
-        utilizationLabel.setFont(new Font("Arial", Font.BOLD, 14));
-        throughputLabel.setFont(new Font("Arial", Font.BOLD, 14));
-
-        JPanel summaryPanel = new JPanel(new GridLayout(4, 1, 0, 8));
+        // Match the SRTF summary layout: three rows below the results table.
+        JPanel summaryPanel = new JPanel(new GridLayout(3, 1, 0, 8));
         summaryPanel.setBackground(Color.WHITE);
         summaryPanel.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
         summaryPanel.add(totalLabel);
         summaryPanel.add(averageLabel);
-        summaryPanel.add(utilizationLabel);
-        summaryPanel.add(throughputLabel);
+        summaryPanel.add(performanceLabel);
 
         JPanel resultsPanel = new JPanel(new BorderLayout(5, 5));
         resultsPanel.add(new JScrollPane(resultTable), BorderLayout.CENTER);
@@ -377,10 +374,9 @@ public class RoundRobin extends JFrame {
                 + "TOTAL Waiting Time (WT): -");
         averageLabel.setText("AVERAGE Completion Time (CT): -     "
                 + "AVERAGE Turnaround Time (TAT): -     "
-                + "AVERAGE Waiting Time (WT): -     "
-                + "AVERAGE Response Time (RT): -");
-        utilizationLabel.setText("CPU UTILIZATION: -");
-        throughputLabel.setText("THROUGHPUT: -");
+                + "AVERAGE Waiting Time (WT): -");
+        performanceLabel.setText("AVERAGE Response Time (RT): -     "
+                + "CPU Utilization: -     Throughput: -");
         queueArea.setText("");
         ganttPanel.setSegments(new ArrayList<Segment>(), 0);
     }
@@ -662,22 +658,111 @@ public class RoundRobin extends JFrame {
         averageLabel.setText(String.format(
                 "AVERAGE Completion Time (CT): %.2f ms     "
                 + "AVERAGE Turnaround Time (TAT): %.2f ms     "
-                + "AVERAGE Waiting Time (WT): %.2f ms     "
-                + "AVERAGE Response Time (RT): %.2f ms",
+                + "AVERAGE Waiting Time (WT): %.2f ms",
                 (double) totalCT / n, (double) totalTAT / n,
-                (double) totalWT / n, (double) totalRT / n));
+                (double) totalWT / n));
 
         double cpuUtilization = finalTime > 0
                 ? (double) totalBusyTime / finalTime * 100.0 : 0.0;
         double throughput = finalTime > 0
                 ? (double) n / finalTime : 0.0;
 
-        utilizationLabel.setText(String.format(
-                "CPU UTILIZATION: %.2f%%  (Busy Time: %d ms / Elapsed Time: %d ms)",
-                cpuUtilization, totalBusyTime, finalTime));
-        throughputLabel.setText(String.format(
-                "THROUGHPUT: %.4f processes/ms  (%d processes / %d ms)",
-                throughput, n, finalTime));
+        performanceLabel.setText(String.format(
+                "AVERAGE Response Time (RT): %.2f ms     "
+                + "CPU Utilization: %.2f%%     Throughput: %.4f processes/ms",
+                (double) totalRT / n, cpuUtilization, throughput));
+    }
+
+    private void captureOriginalFonts(Container container) {
+        for (Component component : container.getComponents()) {
+            if (component.getFont() != null) {
+                originalFonts.put(component, component.getFont());
+            }
+            if (component instanceof Container) {
+                captureOriginalFonts((Container) component);
+            }
+        }
+    }
+
+    //Zoom controls
+    private void zoomIn() {
+        if (zoomLevel < 2.0) {
+            zoomLevel = Math.min(2.0, zoomLevel + 0.1);
+            applyZoom();
+        }
+    }
+
+    private void zoomOut() {
+        if (zoomLevel > 0.7) {
+            zoomLevel = Math.max(0.7, zoomLevel - 0.1);
+            applyZoom();
+        }
+    }
+
+    private void resetZoom() {
+        zoomLevel = 1.0;
+        applyZoom();
+    }
+
+    private void applyZoom() {
+        for (Map.Entry<Component, Font> entry : originalFonts.entrySet()) {
+            Component component = entry.getKey();
+            Font original = entry.getValue();
+            component.setFont(original.deriveFont(
+                    Math.max(8.0f, (float) (original.getSize2D() * zoomLevel))));
+        }
+        if (inputTable != null) {
+            inputTable.setRowHeight(Math.max(18, (int) Math.round(25 * zoomLevel)));
+        }
+        if (resultTable != null) {
+            resultTable.setRowHeight(Math.max(18, (int) Math.round(25 * zoomLevel)));
+        }
+        if (ganttPanel != null) {
+            ganttPanel.setZoomScale(zoomLevel);
+        }
+        revalidate();
+        repaint();
+    }
+
+    private void setupZoomShortcuts() {
+        javax.swing.JRootPane root = getRootPane();
+        int condition = javax.swing.JComponent.WHEN_IN_FOCUSED_WINDOW;
+
+        root.getInputMap(condition).put(
+                KeyStroke.getKeyStroke(KeyEvent.VK_EQUALS, InputEvent.CTRL_DOWN_MASK),
+                "zoomIn");
+        root.getInputMap(condition).put(
+                KeyStroke.getKeyStroke(KeyEvent.VK_EQUALS,
+                        InputEvent.CTRL_DOWN_MASK | InputEvent.SHIFT_DOWN_MASK),
+                "zoomIn");
+        root.getInputMap(condition).put(
+                KeyStroke.getKeyStroke(KeyEvent.VK_ADD, InputEvent.CTRL_DOWN_MASK),
+                "zoomIn");
+        root.getInputMap(condition).put(
+                KeyStroke.getKeyStroke(KeyEvent.VK_MINUS, InputEvent.CTRL_DOWN_MASK),
+                "zoomOut");
+        root.getInputMap(condition).put(
+                KeyStroke.getKeyStroke(KeyEvent.VK_0, InputEvent.CTRL_DOWN_MASK),
+                "resetZoom");
+
+        root.getActionMap().put("zoomIn", new AbstractAction() {
+            @Override
+            public void actionPerformed(java.awt.event.ActionEvent e) {
+                zoomIn();
+            }
+        });
+        root.getActionMap().put("zoomOut", new AbstractAction() {
+            @Override
+            public void actionPerformed(java.awt.event.ActionEvent e) {
+                zoomOut();
+            }
+        });
+        root.getActionMap().put("resetZoom", new AbstractAction() {
+            @Override
+            public void actionPerformed(java.awt.event.ActionEvent e) {
+                resetZoom();
+            }
+        });
     }
 
     private static class GanttPanel extends JPanel {
