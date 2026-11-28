@@ -32,19 +32,7 @@ public class Scan extends JFrame {
     }
 
     public Scan(JFrame mainMenu) {
-        this.mainMenu = mainMenu;
-        // Set Nimbus Look and Feel for a modern UI
-        try {
-            for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
-                if ("Nimbus".equals(info.getName())) {
-                    UIManager.setLookAndFeel(info.getClassName());
-                    break;
-                }
-            }
-            setUIFont(new javax.swing.plaf.FontUIResource(MAIN_FONT));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        this.mainMenu = mainMenu;      
 
         setTitle("SCAN Disk Scheduling Simulator");
         setSize(950, 750);
